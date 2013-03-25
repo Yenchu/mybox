@@ -2,8 +2,8 @@ package mybox.web.controller;
 
 import javax.servlet.http.HttpServletRequest;
 
-import mybox.common.to.User;
-import mybox.dropbox.model.Account;
+import mybox.model.User;
+import mybox.model.dropbox.Account;
 import mybox.util.WebUtil;
 
 import org.slf4j.Logger;
@@ -12,7 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-
 
 @Controller
 public class UserController extends BaseController {

@@ -1,76 +1,75 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
 <tiles-definitions>
-	<definition name="baseLayout" template="/WEB-INF/layouts/baseLayout.jsp" />
+	<definition name="baseLayout" template="/WEB-INF/templates/layout.jsp" />
 
 	<definition name="simpleLayout" extends="baseLayout">
 		<put-attribute name="header">
-			<definition template="/WEB-INF/layouts/empty.jsp" />
+			<definition template="/WEB-INF/templates/empty.jsp" />
 		</put-attribute>
 		<put-attribute name="body">
-			<definition template="/WEB-INF/layouts/contentLayout.jsp" />
+			<definition template="/WEB-INF/templates/content.jsp" />
 		</put-attribute>
 		<put-attribute name="footer">
-			<definition template="/WEB-INF/layouts/empty.jsp" />
+			<definition template="/WEB-INF/templates/empty.jsp" />
 		</put-attribute>
 	</definition>
 	
 	<definition name="topNavLayout" extends="baseLayout">
 		<put-attribute name="header" cascade="true">
-			<definition template="/WEB-INF/layouts/header.jsp" />
+			<definition template="/WEB-INF/templates/header.jsp" />
 		</put-attribute>
 		<put-attribute name="footer" cascade="true">
-			<definition template="/WEB-INF/layouts/footer.jsp" />
+			<definition template="/WEB-INF/templates/footer.jsp" />
 		</put-attribute>
 	</definition>
 	
-	<definition name="contentLayout" extends="topNavLayout">
+	<definition name="contentOnlyLayout" extends="topNavLayout">
 		<put-attribute name="body" cascade="true">
-			<definition template="/WEB-INF/layouts/contentLayout.jsp" />
+			<definition template="/WEB-INF/templates/content.jsp" />
 		</put-attribute>
 	</definition>
 	
-	<definition name="leftNavLayout" extends="topNavLayout">
+	<definition name="leftNavContentLayout" extends="topNavLayout">
 		<put-attribute name="body" cascade="true">
-			<definition template="/WEB-INF/layouts/leftNavLayout.jsp" />
+			<definition template="/WEB-INF/templates/leftNavContent.jsp" />
 		</put-attribute>
-	</definition>
-
-	<definition name="fileLayout" extends="leftNavLayout">
-		<put-attribute name="leftNav" value="/WEB-INF/layouts/fileLeftNav.jsp" cascade="true" />
-		<put-list-attribute name="cssjs">
-			<add-attribute value="/WEB-INF/cssJs/fileCssJs.jsp" />
-		</put-list-attribute>
 	</definition>
 
 	<definition name="login" extends="simpleLayout">
-		<put-attribute name="content" value="/WEB-INF/views/login.jsp" cascade="true" />
+		<put-attribute name="content" value="/WEB-INF/views/login/login.jsp" cascade="true" />
 		<put-list-attribute name="cssjs">
-			<add-attribute value="/WEB-INF/cssJs/loginCssJs.jsp" />
+			<add-attribute value="/WEB-INF/views/login/loginCssJs.jsp" />
 		</put-list-attribute>
 	</definition>
 	
-	<definition name="account" extends="contentLayout">
+	<definition name="account" extends="contentOnlyLayout">
 		<put-attribute name="content" value="/WEB-INF/views/account.jsp" cascade="true" />
 	</definition>
 	
-	<definition name="groups" extends="contentLayout">
-		<put-attribute name="content" value="/WEB-INF/views/groups.jsp" cascade="true" />
+	<definition name="groups" extends="contentOnlyLayout">
+		<put-attribute name="content" value="/WEB-INF/views/groups/groups.jsp" cascade="true" />
 		<put-list-attribute name="cssjs">
-			<add-attribute value="/WEB-INF/cssJs/groupCssJs.jsp" />
+			<add-attribute value="/WEB-INF/views/groups/groupCssJs.jsp" />
+		</put-list-attribute>
+	</definition>
+	
+	<definition name="users" extends="contentOnlyLayout">
+		<put-attribute name="content" value="/WEB-INF/views/users.jsp" cascade="true" />
+	</definition>
+
+	<definition name="fileLayout" extends="leftNavContentLayout">
+		<put-attribute name="leftNav" value="/WEB-INF/views/files/fileLeftNav.jsp" cascade="true" />
+		<put-list-attribute name="cssjs">
+			<add-attribute value="/WEB-INF/views/files/fileCssJs.jsp" />
 		</put-list-attribute>
 	</definition>
 
 	<definition name="files" extends="fileLayout">
-		<put-attribute name="content" value="/WEB-INF/views/files.jsp" cascade="true" />
+		<put-attribute name="content" value="/WEB-INF/views/files/files.jsp" cascade="true" />
 	</definition>
 	
-	<definition name="groupFiles" extends="fileLayout">
-		<put-attribute name="leftNav" value="/WEB-INF/layouts/groupLeftNav.jsp" cascade="true" />
-		<put-attribute name="content" value="/WEB-INF/views/files.jsp" cascade="true" />
-	</definition>
-	
-	<definition name="users" extends="contentLayout">
-		<put-attribute name="content" value="/WEB-INF/views/users.jsp" cascade="true" />
+	<definition name="groupFiles" extends="files">
+		<put-attribute name="leftNav" value="/WEB-INF/views/files/groupLeftNav.jsp" cascade="true" />
 	</definition>
 </tiles-definitions>

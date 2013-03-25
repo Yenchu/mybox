@@ -3,17 +3,17 @@ package mybox.service;
 import java.util.List;
 
 import mybox.BaseUnitTest;
-import mybox.common.to.CreateParams;
-import mybox.common.to.LoginParams;
-import mybox.common.to.MetadataParams;
-import mybox.common.to.Params;
-import mybox.common.to.PathParams;
-import mybox.common.to.Space;
-import mybox.dropbox.model.MetadataEntry;
-import mybox.mondo.model.Group;
-import mybox.mondo.to.MondoUser;
+import mybox.model.CreateParams;
+import mybox.model.LoginParams;
+import mybox.model.MetadataParams;
+import mybox.model.Params;
+import mybox.model.PathParams;
+import mybox.model.Space;
+import mybox.model.dropbox.MetadataEntry;
+import mybox.model.mondo.Group;
+import mybox.model.mondo.MondoUser;
 import mybox.service.MondoService;
-import mybox.web.to.FileOperationResponse;
+import mybox.to.FileOperationResponse;
 
 import org.junit.Test;
 import org.slf4j.Logger;

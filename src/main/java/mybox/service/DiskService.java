@@ -1,10 +1,9 @@
 package mybox.service;
 
-import mybox.dropbox.model.MetadataEntry;
-import mybox.web.to.Page;
+import mybox.model.dropbox.MetadataEntry;
+import mybox.to.Page;
 
 import org.springframework.data.domain.Pageable;
-
 
 public interface DiskService extends FileService {
 	

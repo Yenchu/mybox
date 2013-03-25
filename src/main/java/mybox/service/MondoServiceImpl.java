@@ -1,8 +1,7 @@
 package mybox.service;
 
-import static mybox.mondo.MondoUtil.getEncodedHeaders;
-import static mybox.mondo.MondoUtil.getQueryString;
-import static mybox.mondo.MondoUtil.getSignedHeaders;
+import static mybox.backend.mondo.MondoUtil.getQueryString;
+import static mybox.backend.mondo.MondoUtil.getSignedHeaders;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -10,39 +9,40 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import mybox.common.to.ChunkedUploadParams;
-import mybox.common.to.CopyParams;
-import mybox.common.to.CreateParams;
-import mybox.common.to.DeleteParams;
-import mybox.common.to.DeltaParams;
-import mybox.common.to.EntryParams;
-import mybox.common.to.LinkParams;
-import mybox.common.to.LoginParams;
-import mybox.common.to.MetadataParams;
-import mybox.common.to.MoveParams;
-import mybox.common.to.Params;
-import mybox.common.to.PathParams;
-import mybox.common.to.RevisionParams;
-import mybox.common.to.SearchParams;
-import mybox.common.to.Space;
-import mybox.common.to.ThumbnailParams;
-import mybox.common.to.UploadParams;
-import mybox.dropbox.model.DeltaPage;
-import mybox.dropbox.model.FileEntry;
-import mybox.dropbox.model.Link;
-import mybox.dropbox.model.MetadataEntry;
-import mybox.mondo.HttpHeader;
-import mybox.mondo.MondoUtil;
-import mybox.mondo.QueryString;
-import mybox.mondo.model.Account;
-import mybox.mondo.model.Group;
-import mybox.mondo.to.MondoUser;
-import mybox.rest.Fault;
-import mybox.rest.FaultException;
+import mybox.backend.mondo.HttpHeader;
+import mybox.backend.mondo.MondoUtil;
+import mybox.backend.mondo.QueryString;
+import mybox.exception.Error;
+import mybox.exception.ErrorException;
+import mybox.model.ChunkedUploadParams;
+import mybox.model.CopyParams;
+import mybox.model.CreateParams;
+import mybox.model.DeleteParams;
+import mybox.model.DeltaParams;
+import mybox.model.EntryParams;
+import mybox.model.LinkParams;
+import mybox.model.LoginParams;
+import mybox.model.MetadataParams;
+import mybox.model.MoveParams;
+import mybox.model.Params;
+import mybox.model.PathParams;
+import mybox.model.RevisionParams;
+import mybox.model.SearchParams;
+import mybox.model.Space;
+import mybox.model.ThumbnailParams;
+import mybox.model.UploadParams;
+import mybox.model.dropbox.DeltaPage;
+import mybox.model.dropbox.FileEntry;
+import mybox.model.dropbox.Link;
+import mybox.model.dropbox.MetadataEntry;
+import mybox.model.mondo.Account;
+import mybox.model.mondo.Group;
+import mybox.model.mondo.MondoUser;
 import mybox.rest.RestResponse;
+import mybox.rest.RestClient;
+import mybox.to.FileOperationResponse;
 import mybox.util.FileUtil;
 import mybox.util.HttpUtil;
-import mybox.web.to.FileOperationResponse;
 
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -66,17 +66,17 @@ public class MondoServiceImpl extends AbstractFileService implements MondoServic
 	protected Environment env;
 	
 	@Autowired
-	private RestService restService;
+	private RestClient restClient;
 	
 	public MondoUser auth(LoginParams params) {
 		String url = getServiceUrl("auth");
-		String[] headers = getEncodedHeaders(HttpHeader.AUTH_USER.value(), params.getUsername(), HttpHeader.AUTH_PASSWD.value(), params.getPassword());
-		RestResponse<String> restResponse = restService.post(url, headers);
+		String[] headers = HttpUtil.encodedHeaders(HttpHeader.AUTH_USER.value(), params.getUsername(), HttpHeader.AUTH_PASSWD.value(), params.getPassword());
+		RestResponse<String> restResponse = restClient.post(url, headers);
 		
 		String token = restResponse.getHeader(HttpHeader.AUTH_TOKEN.value());
 		log.debug("token: {}", token);
 		if (StringUtils.isBlank(token)) {
-			throw new FaultException(Fault.unauthorized());
+			throw new ErrorException(Error.unauthorized());
 		}
 		
 		Account account = getAccount(token);
@@ -88,8 +88,8 @@ public class MondoServiceImpl extends AbstractFileService implements MondoServic
 	
 	public Account getAccount(String token) {
 		String url = getServiceUrl("account/info");
-		String[] headers = getEncodedHeaders(HttpHeader.AUTH_TOKEN.value(), token);
-		Account account = restService.get(Account.class, url, headers);
+		String[] headers = HttpUtil.encodedHeaders(HttpHeader.AUTH_TOKEN.value(), token);
+		Account account = restClient.get(Account.class, url, headers);
 		customGroups(account.getGroups());
 		return account;
 	}
@@ -102,7 +102,7 @@ public class MondoServiceImpl extends AbstractFileService implements MondoServic
 		String limitSize = "1000";
 		Map<String, String> qryStr = getQueryString(QueryString.OFFSET.value(), offset, QueryString.LIMIT_SIZE.value(), limitSize);
 		
-		RestResponse<String> restResponse = restService.get(url, qryStr, headers);
+		RestResponse<String> restResponse = restClient.get(url, qryStr, headers);
 		List<Group> groups = parseListResponse(Group.class, restResponse.getBody());
 		customGroups(groups);
 		return groups;
@@ -160,7 +160,7 @@ public class MondoServiceImpl extends AbstractFileService implements MondoServic
 		String url = getServiceUrl("metadata" + path);
 		String[] headers = getSignedHeaders(user, HttpHeader.GROUP_ID.value(), root);
 		
-		MetadataEntry entry = restService.get(MetadataEntry.class, url, headers);
+		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
 		customEntries(space, entry);
 		return entry;
 	}
@@ -175,7 +175,7 @@ public class MondoServiceImpl extends AbstractFileService implements MondoServic
 		String url = getServiceUrl("metadata" + path, qryStr);
 		String[] headers = getSignedHeaders(user, HttpHeader.GROUP_ID.value(), root);
 		
-		MetadataEntry entry = restService.get(MetadataEntry.class, url, headers);
+		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
 		customEntries(space, entry);
 		return entry;
 	}
@@ -198,7 +198,7 @@ public class MondoServiceImpl extends AbstractFileService implements MondoServic
 		String url = getServiceUrl("files_put" + path, qryStr);
 		String[] headers = getSignedHeaders(user, HttpHeader.GROUP_ID.value(), root);
 
-		MetadataEntry entry = restService.put(MetadataEntry.class, url, is, length, headers);
+		MetadataEntry entry = restClient.put(MetadataEntry.class, url, is, length, headers);
 		customEntry(entry);
 		return entry;
 	}
@@ -212,7 +212,7 @@ public class MondoServiceImpl extends AbstractFileService implements MondoServic
 		String url = getServiceUrl("files" + path, qryStr);
 		String[] headers = getSignedHeaders(user, HttpHeader.GROUP_ID.value(), root);
 
-		RestResponse<InputStream> restResponse = restService.getStream(url, headers);
+		RestResponse<InputStream> restResponse = restClient.getStream(url, headers);
 		FileEntry entry = convertDownloadResponse(restResponse, "x-mondo-metadata");
 		return entry;
 	}
@@ -225,7 +225,7 @@ public class MondoServiceImpl extends AbstractFileService implements MondoServic
 		String url = getServiceUrl("fileops/create_folder");
 		String[] headers = getSignedHeaders(user, HttpHeader.GROUP_ID.value(), root);
 		
-		MetadataEntry entry = restService.post(MetadataEntry.class, url, fields, headers);
+		MetadataEntry entry = restClient.post(MetadataEntry.class, url, fields, headers);
 		customEntry(entry);
 		
 		String name = FileUtil.getNameFromPath(params.getPath());

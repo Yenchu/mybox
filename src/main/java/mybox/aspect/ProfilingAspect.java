@@ -13,20 +13,23 @@ public class ProfilingAspect {
 
 	private static final Logger log = LoggerFactory.getLogger(ProfilingAspect.class);
 
-	@Pointcut("execution(* com.cloudena.larkspur.service.RestService+.p*(..))")
-    private void httpPostAndPut() {}
+	@Pointcut("execution(* mybox.rest.RestClient+.p*(..))")
+    private void http3P() {}
 	
-	@Pointcut("execution(* com.cloudena.larkspur.service.RestService+.g*(..))")
+	@Pointcut("execution(* mybox.rest.RestClient+.g*(..))")
     private void httpGet() {}
 	
-	@Around("httpPostAndPut() || httpGet()")
+	@Pointcut("execution(* mybox.rest.RestClient+.d*(..))")
+    private void httpDelete() {}
+	
+	@Around("http3P() || httpGet() || httpDelete()")
 	public Object profile(ProceedingJoinPoint pjp) throws Throwable {
 		long start = System.currentTimeMillis();
 		Object retVal = pjp.proceed();
 		long endTime = System.currentTimeMillis() - start;
 		MethodSignature signature = (MethodSignature) pjp.getSignature();
 		String methodName = signature.getMethod().getName();
-		log.info("Method '{}' execution time {} ms.", methodName, endTime);
+		log.info("Method '{}' spent {} ms.", methodName, endTime);
 		return retVal;
 	}
 }

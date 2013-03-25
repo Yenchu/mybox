@@ -2,7 +2,7 @@ package mybox.config;
 
 import java.util.List;
 
-import mybox.web.interceptor.AppHandlerInterceptor;
+import mybox.web.interceptor.AppInterceptor;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -45,7 +45,7 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 	
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		registry.addInterceptor(new AppHandlerInterceptor());
+		registry.addInterceptor(new AppInterceptor());
 	}
 	
 	@Override

@@ -6,9 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-
 @Controller
-@RequestMapping(value = "/disk")
+@RequestMapping(value = "/dk")
 public class DiskController extends AbstractFileController {
 
 	@Autowired
@@ -21,6 +20,6 @@ public class DiskController extends AbstractFileController {
 	
 	@Override
 	protected int getServicePathLength() {
-		return 5;
+		return 3;
 	}
 }

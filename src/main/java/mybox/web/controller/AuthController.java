@@ -3,9 +3,8 @@ package mybox.web.controller;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import mybox.common.to.User;
+import mybox.model.User;
 import mybox.util.WebUtil;
-import mybox.web.ServiceType;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
 
 @Controller
 public class AuthController extends BaseController {
@@ -39,5 +37,20 @@ public class AuthController extends BaseController {
 		log.debug("User {} from {} logout!", user, WebUtil.getUserAddress(request));
 		session.removeAttribute("user");
 		return "login";
+	}
+	
+	public enum ServiceType {
+
+		DISK("dk"), DROPBOX("db"), MONDO("md");
+		
+		private final String value;
+		
+		private ServiceType(String value) {
+			this.value = value;
+		}
+		
+		public String value() {
+			return value;
+		}
 	}
 }

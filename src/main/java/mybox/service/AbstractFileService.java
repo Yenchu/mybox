@@ -4,16 +4,15 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import mybox.common.to.Space;
-import mybox.dropbox.model.FileEntry;
-import mybox.dropbox.model.MetadataEntry;
-import mybox.rest.JsonConverter;
+import mybox.json.JsonConverter;
+import mybox.model.Space;
+import mybox.model.dropbox.FileEntry;
+import mybox.model.dropbox.MetadataEntry;
 import mybox.rest.RestResponse;
 import mybox.util.HttpUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 public abstract class AbstractFileService {
 
@@ -66,7 +65,7 @@ public abstract class AbstractFileService {
 		
 		String path = folderEntry.getPath();
 		if (space.getRoot().equals(path)) {
-			folderEntry.setId(HttpUtil.encodeUrl(path));
+			folderEntry.setId(HttpUtil.encode(path));
 			folderEntry.setName(space.getName());
 			folderEntry.setLocation("");
 		} else {
@@ -93,7 +92,7 @@ public abstract class AbstractFileService {
 			return;
 		}
 		
-		String id = HttpUtil.encodeUrl(path);
+		String id = HttpUtil.encode(path);
 		entry.setId(id);
 
 		int idx = path.lastIndexOf('/');

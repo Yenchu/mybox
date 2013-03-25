@@ -12,39 +12,39 @@ import javax.mail.internet.MimeUtility;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import mybox.common.to.CopyParams;
-import mybox.common.to.CreateParams;
-import mybox.common.to.DeleteParams;
-import mybox.common.to.DeltaParams;
-import mybox.common.to.EntryParams;
-import mybox.common.to.LinkParams;
-import mybox.common.to.LoginParams;
-import mybox.common.to.MetadataParams;
-import mybox.common.to.MoveParams;
-import mybox.common.to.Params;
-import mybox.common.to.RevisionParams;
-import mybox.common.to.SearchParams;
-import mybox.common.to.Space;
-import mybox.common.to.ThumbnailParams;
-import mybox.common.to.UploadParams;
-import mybox.common.to.User;
-import mybox.dropbox.model.DeltaPage;
-import mybox.dropbox.model.FileEntry;
-import mybox.dropbox.model.Link;
-import mybox.dropbox.model.MetadataEntry;
-import mybox.json.Json;
-import mybox.rest.Fault;
-import mybox.rest.FaultException;
+import mybox.exception.Error;
+import mybox.exception.ErrorException;
+import mybox.json.JsonConverter;
+import mybox.model.CopyParams;
+import mybox.model.CreateParams;
+import mybox.model.DeleteParams;
+import mybox.model.DeltaParams;
+import mybox.model.EntryParams;
+import mybox.model.LinkParams;
+import mybox.model.LoginParams;
+import mybox.model.MetadataParams;
+import mybox.model.MoveParams;
+import mybox.model.Params;
+import mybox.model.RevisionParams;
+import mybox.model.SearchParams;
+import mybox.model.Space;
+import mybox.model.ThumbnailParams;
+import mybox.model.UploadParams;
+import mybox.model.User;
+import mybox.model.dropbox.DeltaPage;
+import mybox.model.dropbox.FileEntry;
+import mybox.model.dropbox.Link;
+import mybox.model.dropbox.MetadataEntry;
 import mybox.service.FileService;
+import mybox.to.AuthResponse;
+import mybox.to.FileOperationResponse;
+import mybox.to.Page;
+import mybox.to.TreeNode;
+import mybox.to.UploadResponse;
 import mybox.util.FileUtil;
 import mybox.util.HttpUtil;
 import mybox.util.UserAgentParser;
 import mybox.util.WebUtil;
-import mybox.web.to.AuthResponse;
-import mybox.web.to.FileOperationResponse;
-import mybox.web.to.Page;
-import mybox.web.to.TreeNode;
-import mybox.web.to.UploadResponse;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemIterator;
@@ -62,7 +62,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-
 public abstract class AbstractFileController extends BaseController {
 	
 	private static final Logger log = LoggerFactory.getLogger(AbstractFileController.class);
@@ -72,7 +71,7 @@ public abstract class AbstractFileController extends BaseController {
 	protected abstract FileService getService();
 	
 	protected int getServicePathLength() {
-		return 0;
+		return 3; // default naming rule for service
 	}
 
 	@RequestMapping(value="/login", method = RequestMethod.POST)
@@ -89,7 +88,7 @@ public abstract class AbstractFileController extends BaseController {
 		User user = getService().auth(param);
 		
 		if (user == null) {
-			throw new FaultException(Fault.unauthorized());
+			throw new ErrorException(Error.unauthorized());
 		}
 		setUser(request, user);
 		
@@ -210,7 +209,7 @@ public abstract class AbstractFileController extends BaseController {
 		User user = getUser(request);
 		String path = getRestOfPath(request, getServicePathLength() + 7 + space.length()); // 8 + 6 + (1 + space.length)
 		if (path == null || "".equals(path)) {
-			throw new FaultException(Fault.badRequest("Download file request from " + user.toString() + " doesn't have file path!"));
+			throw new ErrorException(Error.badRequest("Download file request from " + user.toString() + " doesn't have file path!"));
 		}
 		log.info("User {} download {}:{}", new Object[]{user.toString(), space, path});
 		
@@ -229,7 +228,7 @@ public abstract class AbstractFileController extends BaseController {
 			String userAgent = request.getHeader("user-agent");
 			if (UserAgentParser.isIE(userAgent)) {
 				// IE required URL-encoded file name 
-				response.setHeader("Content-Disposition", "attachment; filename=\"" + HttpUtil.encodeUrl(fileName).replace("+", "%20") + "\"");
+				response.setHeader("Content-Disposition", "attachment; filename=\"" + HttpUtil.encode(fileName).replace("+", "%20") + "\"");
 			} else if (UserAgentParser.isSafari(userAgent)) {
 				// Safari doesn't support non US-ASCII characters in file name
 				response.setCharacterEncoding("UTF-8");
@@ -261,7 +260,7 @@ public abstract class AbstractFileController extends BaseController {
 		User user = getUser(request);
 		String path = getRestOfPath(request, getServicePathLength() + 12 + space.length()); // 8 + 11 + (1 + space.length)
 		if (path == null || "".equals(path)) {
-			throw new FaultException(Fault.badRequest("Get thumbnail request from " + user.toString() + " doesn't have file path!"));
+			throw new ErrorException(Error.badRequest("Get thumbnail request from " + user.toString() + " doesn't have file path!"));
 		}
 		log.debug("User {} get thumbnail {}:{}", new Object[]{user.toString(), space, path});
 		
@@ -300,7 +299,7 @@ public abstract class AbstractFileController extends BaseController {
 		
 		try {
 			// IE 9 doesn't support application/json, so using text/plain as workaround.
-			String body = Json.toJson(uploadResps);
+			String body = JsonConverter.toJson(uploadResps);
 			response.setContentType("text/plain;charset=UTF-8");
 			response.getWriter().print(body);
 			response.getWriter().flush();
@@ -460,7 +459,7 @@ public abstract class AbstractFileController extends BaseController {
 		log.info("User {} want to restore {}:{} version {}", new Object[]{user.toString(), space, path, rev});
 		
 		if (StringUtils.isBlank(rev)) {
-			throw new FaultException(Fault.badRequest("Can not find the restore vision of the file " + path));
+			throw new ErrorException(Error.badRequest("Can not find the restore vision of the file " + path));
 		}
 		
 		EntryParams params = new EntryParams(user, space, path);
@@ -516,9 +515,9 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "useFlash", required = false) Boolean useFlash, 
 			HttpServletRequest request) {
 		log.debug("useFlash={}", useFlash);
-		String page = "upload/jQueryFileUpload";
+		String page = "files/jQueryFileUpload";
 		if (useFlash != null && useFlash == true) {
-			page = "upload/swfUpload";
+			page = "files/swfUpload";
 		}
 		return page;
 	}
@@ -567,16 +566,16 @@ public abstract class AbstractFileController extends BaseController {
 					uploadResps.add(resp);
 				}
 			}
-		} catch (FaultException e) {
-			Fault fault = e.getFault();
-			log.warn("Got fault when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), fault});
-			UploadResponse resp = new UploadResponse(fileName, fileSize, fault.getType());
+		} catch (ErrorException e) {
+			Error error = e.getError();
+			log.warn("Got error when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), error});
+			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle());
 			uploadResps.add(resp);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			log.error("Got exception when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage()});
-			Fault fault = Fault.internalServerError(e.getMessage());
-			UploadResponse resp = new UploadResponse(fileName, fileSize, fault.getType());
+			Error error = Error.internalServerError(e.getMessage());
+			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle());
 			uploadResps.add(resp);
 		}
 		return uploadResps;
@@ -626,16 +625,16 @@ public abstract class AbstractFileController extends BaseController {
 					uploadResps.add(resp);
 				}
 			}
-		} catch (FaultException e) {
-			Fault fault = e.getFault();
-			log.warn("Got fault when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), fault});
-			UploadResponse resp = new UploadResponse(fileName, fileSize, fault.getType());
+		} catch (ErrorException e) {
+			Error error = e.getError();
+			log.warn("Got error when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), error});
+			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle());
 			uploadResps.add(resp);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			log.error("Got exception when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage()});
-			Fault fault = Fault.internalServerError(e.getMessage());
-			UploadResponse resp = new UploadResponse(fileName, fileSize, fault.getType());
+			Error error = Error.internalServerError(e.getMessage());
+			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle());
 			uploadResps.add(resp);
 		}
 		return uploadResps;

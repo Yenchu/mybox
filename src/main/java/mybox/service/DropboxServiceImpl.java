@@ -1,24 +1,24 @@
 package mybox.service;
 
-import static mybox.dropbox.DropboxUtil.getCopyUrl;
-import static mybox.dropbox.DropboxUtil.getCreateFolderUrl;
-import static mybox.dropbox.DropboxUtil.getDefaultUser;
-import static mybox.dropbox.DropboxUtil.getDeleteUrl;
-import static mybox.dropbox.DropboxUtil.getDeltaUrl;
-import static mybox.dropbox.DropboxUtil.getFilePutUrl;
-import static mybox.dropbox.DropboxUtil.getFileUrl;
-import static mybox.dropbox.DropboxUtil.getMediaUrl;
-import static mybox.dropbox.DropboxUtil.getMetadataUrl;
-import static mybox.dropbox.DropboxUtil.getMoveUrl;
-import static mybox.dropbox.DropboxUtil.getRestoreUrl;
-import static mybox.dropbox.DropboxUtil.getRevisionUrl;
-import static mybox.dropbox.DropboxUtil.getRootId;
-import static mybox.dropbox.DropboxUtil.getRootName;
-import static mybox.dropbox.DropboxUtil.getSearchUrl;
-import static mybox.dropbox.DropboxUtil.getShareUrl;
-import static mybox.dropbox.DropboxUtil.getSignedHeaders;
-import static mybox.dropbox.DropboxUtil.getThumbnailUrl;
-import static mybox.dropbox.DropboxUtil.getUser;
+import static mybox.backend.dropbox.DropboxUtil.getCopyUrl;
+import static mybox.backend.dropbox.DropboxUtil.getCreateFolderUrl;
+import static mybox.backend.dropbox.DropboxUtil.getDefaultUser;
+import static mybox.backend.dropbox.DropboxUtil.getDeleteUrl;
+import static mybox.backend.dropbox.DropboxUtil.getDeltaUrl;
+import static mybox.backend.dropbox.DropboxUtil.getFilePutUrl;
+import static mybox.backend.dropbox.DropboxUtil.getFileUrl;
+import static mybox.backend.dropbox.DropboxUtil.getMediaUrl;
+import static mybox.backend.dropbox.DropboxUtil.getMetadataUrl;
+import static mybox.backend.dropbox.DropboxUtil.getMoveUrl;
+import static mybox.backend.dropbox.DropboxUtil.getRestoreUrl;
+import static mybox.backend.dropbox.DropboxUtil.getRevisionUrl;
+import static mybox.backend.dropbox.DropboxUtil.getRootId;
+import static mybox.backend.dropbox.DropboxUtil.getRootName;
+import static mybox.backend.dropbox.DropboxUtil.getSearchUrl;
+import static mybox.backend.dropbox.DropboxUtil.getShareUrl;
+import static mybox.backend.dropbox.DropboxUtil.getSignedHeaders;
+import static mybox.backend.dropbox.DropboxUtil.getThumbnailUrl;
+import static mybox.backend.dropbox.DropboxUtil.getUser;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -28,40 +28,42 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import mybox.common.to.BulkParams;
-import mybox.common.to.ChunkedUploadParams;
-import mybox.common.to.CopyParams;
-import mybox.common.to.CreateParams;
-import mybox.common.to.DeleteParams;
-import mybox.common.to.DeltaParams;
-import mybox.common.to.EntryParams;
-import mybox.common.to.LinkParams;
-import mybox.common.to.LoginParams;
-import mybox.common.to.MetadataParams;
-import mybox.common.to.MoveParams;
-import mybox.common.to.Params;
-import mybox.common.to.PathParams;
-import mybox.common.to.RevisionParams;
-import mybox.common.to.SearchParams;
-import mybox.common.to.Space;
-import mybox.common.to.ThumbnailParams;
-import mybox.common.to.UploadParams;
-import mybox.common.to.User;
-import mybox.dropbox.ChunkedUploader;
-import mybox.dropbox.DropboxUtil;
-import mybox.dropbox.model.DeltaEntry;
-import mybox.dropbox.model.DeltaPage;
-import mybox.dropbox.model.FileEntry;
-import mybox.dropbox.model.Link;
-import mybox.dropbox.model.MetadataEntry;
-import mybox.dropbox.to.DropboxUser;
-import mybox.rest.Fault;
-import mybox.rest.FaultException;
+import mybox.backend.dropbox.ChunkedUploader;
+import mybox.backend.dropbox.DropboxUtil;
+import mybox.exception.Error;
+import mybox.exception.ErrorException;
+import mybox.model.BulkParams;
+import mybox.model.ChunkedUploadParams;
+import mybox.model.CopyParams;
+import mybox.model.CreateParams;
+import mybox.model.DeleteParams;
+import mybox.model.DeltaParams;
+import mybox.model.EntryParams;
+import mybox.model.LinkParams;
+import mybox.model.LoginParams;
+import mybox.model.MetadataParams;
+import mybox.model.MoveParams;
+import mybox.model.Params;
+import mybox.model.PathParams;
+import mybox.model.RevisionParams;
+import mybox.model.SearchParams;
+import mybox.model.Space;
+import mybox.model.ThumbnailParams;
+import mybox.model.UploadParams;
+import mybox.model.User;
+import mybox.model.dropbox.DeltaEntry;
+import mybox.model.dropbox.DeltaPage;
+import mybox.model.dropbox.DropboxUser;
+import mybox.model.dropbox.FileEntry;
+import mybox.model.dropbox.Link;
+import mybox.model.dropbox.MetadataEntry;
+import mybox.rest.RestClient;
 import mybox.rest.RestResponse;
-import mybox.rest.RestResponseHandler;
+import mybox.rest.RestResponseConverter;
+import mybox.rest.RestResponseValidator;
 import mybox.task.HttpPostWorker;
+import mybox.to.FileOperationResponse;
 import mybox.util.FileUtil;
-import mybox.web.to.FileOperationResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +82,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 	private static final Logger log = LoggerFactory.getLogger(DropboxServiceImpl.class);
 
 	@Autowired
-	private RestService restService;
+	private RestClient restClient;
 
 	@Autowired
 	private HttpPostWorker httpPostWorker;
@@ -127,7 +129,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String url = getMetadataUrl(root, path);
 		String[] headers = getSignedHeaders(user);
 		
-		MetadataEntry entry = restService.get(MetadataEntry.class, url, headers);
+		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
 		customEntries(space, entry);
 		return entry;
 	}
@@ -142,7 +144,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String url = getMetadataUrl(root, path, qryStr);
 		String[] headers = getSignedHeaders(user);
 		
-		MetadataEntry entry = restService.get(MetadataEntry.class, url, headers);
+		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
 		customEntries(space, entry);
 		return entry;
 	}
@@ -163,7 +165,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String url = getFileUrl(root, path, qryStr);
 		String[] headers = getSignedHeaders(user);
 
-		RestResponse<InputStream> restResponse = restService.getStream(url, headers);
+		RestResponse<InputStream> restResponse = restClient.getStream(url, headers);
 		FileEntry entry = convertDownloadResponse(restResponse, "x-dropbox-metadata");
 		return entry;
 	}
@@ -177,7 +179,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String url = getThumbnailUrl(root, path, qryStr);
 		String[] headers = getSignedHeaders(user);
 
-		RestResponse<InputStream> restResponse = restService.getStream(url, headers);
+		RestResponse<InputStream> restResponse = restClient.getStream(url, headers);
 		return restResponse.getBody();
 	}
 
@@ -192,20 +194,20 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String url = getFilePutUrl(root, path, qryStr);
 		String[] headers = getSignedHeaders(user);
 
-		MetadataEntry entry = restService.put(MetadataEntry.class, url, is, length, headers);
+		MetadataEntry entry = restClient.put(MetadataEntry.class, url, is, length, headers);
 		customEntry(entry);
 		return entry;
 	}
 
 	public MetadataEntry chunkedUpload(ChunkedUploadParams params) {
-		ChunkedUploader chunkedUploader = new ChunkedUploader(restService);
+		ChunkedUploader chunkedUploader = new ChunkedUploader(restClient);
 		MetadataEntry entry = null;
 		try {
 			entry = chunkedUploader.upload(params);
 			customEntry(entry);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
-			throw new FaultException(Fault.internalServerError(e.getMessage()));
+			throw new ErrorException(Error.internalServerError(e.getMessage()));
 		}
 		return entry;
 	}
@@ -219,7 +221,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 
 	protected DeltaPage<MetadataEntry> getDelta(DeltaParams params, String url, String[] headers) {
 		List<String> fields = params.getParamList();
-		DeltaPage<MetadataEntry> deltaPage = restService.post(deltaResponseHandler, url, fields, headers);
+		DeltaPage<MetadataEntry> deltaPage = restClient.post(deltaResponseHandler, url, fields, headers);
 
 		if (deltaPage.isHasMore()) {
 			log.debug("Has delta more than {}", deltaPage.getEntries().size());
@@ -240,7 +242,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String url = getRevisionUrl(root, path);
 		String[] headers = getSignedHeaders(user);
 
-		List<MetadataEntry> entries = restService.get(metadataListResponseHandler, url, headers);
+		List<MetadataEntry> entries = restClient.get(metadataListResponseHandler, url, headers);
 		customEntries(entries);
 		return entries;
 	}
@@ -254,7 +256,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String url = getRestoreUrl(root, path);
 		String[] headers = getSignedHeaders(user);
 
-		MetadataEntry entry = restService.post(MetadataEntry.class, url, fields, headers);
+		MetadataEntry entry = restClient.post(MetadataEntry.class, url, fields, headers);
 		customEntry(entry);
 		return entry;
 	}
@@ -268,7 +270,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String url = getShareUrl(root, path);
 		String[] headers = getSignedHeaders(user);
 
-		Link link = restService.post(Link.class, url, fields, headers);
+		Link link = restClient.post(Link.class, url, fields, headers);
 		return link;
 	}
 
@@ -281,7 +283,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String url = getMediaUrl(root, path);
 		String[] headers = getSignedHeaders(user);
 
-		Link link = restService.post(Link.class, url, fields, headers);
+		Link link = restClient.post(Link.class, url, fields, headers);
 		return link;
 	}
 
@@ -294,7 +296,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String url = getSearchUrl(root, path);
 		String[] headers = getSignedHeaders(user);
 
-		List<MetadataEntry> entries = restService.post(metadataListResponseHandler, url, fields, headers);
+		List<MetadataEntry> entries = restClient.post(metadataListResponseHandler, url, fields, headers);
 		customEntries(entries);
 		return entries;
 	}
@@ -306,7 +308,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String url = getCreateFolderUrl();
 		String[] headers = getSignedHeaders(user);
 
-		MetadataEntry entry = restService.post(MetadataEntry.class, url, fields, headers);
+		MetadataEntry entry = restClient.post(MetadataEntry.class, url, fields, headers);
 		customEntry(entry);
 		
 		String name = FileUtil.getNameFromPath(params.getPath());
@@ -333,7 +335,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 	protected List<FileOperationResponse> post(BulkParams params, String url) {
 		List<List<String>> fieldsList = params.getParamList();
 		if (fieldsList == null || fieldsList.size() < 1) {
-			throw new FaultException(Fault.badRequest("No any to-be-deleted path!"));
+			throw new ErrorException(Error.badRequest("No any to-be-deleted path!"));
 		}
 
 		DropboxUser user = getUser(params);
@@ -358,7 +360,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 				MetadataEntry entry = future.get();
 				customEntry(entry);
 				resp.setMetadata(entry);
-			} catch (FaultException e) {
+			} catch (ErrorException e) {
 				resp.setError(e.getMessage());
 			} catch (Exception e) {
 				log.error(e.getMessage(), e);
@@ -387,11 +389,11 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		}		
 	}
 
-	protected class DeltaResponseHandler extends RestResponseHandler<DeltaPage<MetadataEntry>, String> {
+	protected class DeltaResponseHandler extends RestResponseConverter<String, DeltaPage<MetadataEntry>> {
 
 		@Override
-		public DeltaPage<MetadataEntry> handle(RestResponse<String> restResponse) {
-			checkResponse(restResponse);
+		public DeltaPage<MetadataEntry> convert(RestResponse<String> restResponse) {
+			RestResponseValidator.validateResponse(restResponse);
 
 			String content = restResponse.getBody();
 			JsonParser parser = new JsonParser();
@@ -435,11 +437,11 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		}
 	}
 
-	protected class MetadataListResponseHandler extends RestResponseHandler<List<MetadataEntry>, String> {
+	protected class MetadataListResponseHandler extends RestResponseConverter<String, List<MetadataEntry>> {
 
 		@Override
-		public List<MetadataEntry> handle(RestResponse<String> restResponse) {
-			checkResponse(restResponse);
+		public List<MetadataEntry> convert(RestResponse<String> restResponse) {
+			RestResponseValidator.validateResponse(restResponse);
 
 			String content = restResponse.getBody();
 			JsonParser parser = new JsonParser();

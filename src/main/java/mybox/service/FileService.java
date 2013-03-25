@@ -3,30 +3,29 @@ package mybox.service;
 import java.io.InputStream;
 import java.util.List;
 
-import mybox.common.to.ChunkedUploadParams;
-import mybox.common.to.CopyParams;
-import mybox.common.to.CreateParams;
-import mybox.common.to.DeleteParams;
-import mybox.common.to.DeltaParams;
-import mybox.common.to.EntryParams;
-import mybox.common.to.LinkParams;
-import mybox.common.to.LoginParams;
-import mybox.common.to.MetadataParams;
-import mybox.common.to.MoveParams;
-import mybox.common.to.Params;
-import mybox.common.to.PathParams;
-import mybox.common.to.RevisionParams;
-import mybox.common.to.SearchParams;
-import mybox.common.to.Space;
-import mybox.common.to.ThumbnailParams;
-import mybox.common.to.UploadParams;
-import mybox.common.to.User;
-import mybox.dropbox.model.DeltaPage;
-import mybox.dropbox.model.FileEntry;
-import mybox.dropbox.model.Link;
-import mybox.dropbox.model.MetadataEntry;
-import mybox.web.to.FileOperationResponse;
-
+import mybox.model.ChunkedUploadParams;
+import mybox.model.CopyParams;
+import mybox.model.CreateParams;
+import mybox.model.DeleteParams;
+import mybox.model.DeltaParams;
+import mybox.model.EntryParams;
+import mybox.model.LinkParams;
+import mybox.model.LoginParams;
+import mybox.model.MetadataParams;
+import mybox.model.MoveParams;
+import mybox.model.Params;
+import mybox.model.PathParams;
+import mybox.model.RevisionParams;
+import mybox.model.SearchParams;
+import mybox.model.Space;
+import mybox.model.ThumbnailParams;
+import mybox.model.UploadParams;
+import mybox.model.User;
+import mybox.model.dropbox.DeltaPage;
+import mybox.model.dropbox.FileEntry;
+import mybox.model.dropbox.Link;
+import mybox.model.dropbox.MetadataEntry;
+import mybox.to.FileOperationResponse;
 
 public interface FileService {
 

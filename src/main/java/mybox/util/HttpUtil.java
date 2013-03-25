@@ -11,6 +11,15 @@ public class HttpUtil {
 	
 	private static final Logger log = LoggerFactory.getLogger(HttpUtil.class);
 
+	public static String[] encodedHeaders(String... headers) {
+		String[] encodedHeaders = null;
+		if (headers != null && headers.length > 0) {
+			encodedHeaders = new String[headers.length];
+			encodeHeaders(encodedHeaders, headers);
+		}
+		return encodedHeaders;
+	}
+	
 	public static void encodeHeaders(String[] encodedHeaders, String... headers) {
 		if (headers.length % 2 != 0) {
 			throw new IllegalArgumentException("Headers must have an even number of elements.");
@@ -24,7 +33,7 @@ public class HttpUtil {
 				continue;
 			}
 			encodedHeaders[i] = header;
-			encodedHeaders[i + 1] = encodeUrl(value);
+			encodedHeaders[i + 1] = encode(value);
 		}
 	}
 	
@@ -42,15 +51,15 @@ public class HttpUtil {
 				} else {
 					buf.append("&");
 				}
-				String name = encodeUrl(qryStr[i]);
-				String value = encodeUrl(qryStr[i + 1]);
+				String name = encode(qryStr[i]);
+				String value = encode(qryStr[i + 1]);
 				buf.append(name).append("=").append(value);
 			}
 		}
 		return buf.toString();
 	}
 	
-	public static String encodeUrl(String str) {
+	public static String encode(String str) {
 		try {
 			return URLEncoder.encode(str, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
@@ -59,7 +68,7 @@ public class HttpUtil {
 		}
 	}
 
-	public static String decodeUrl(String str) {
+	public static String decode(String str) {
 		try {
 			return URLDecoder.decode(str, "UTF-8");
 		} catch (UnsupportedEncodingException e) {

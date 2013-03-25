@@ -4,11 +4,11 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import mybox.common.to.User;
-import mybox.mondo.model.Group;
-import mybox.mondo.to.MondoUser;
+import mybox.model.User;
+import mybox.model.mondo.Group;
+import mybox.model.mondo.MondoUser;
 import mybox.service.MondoService;
-import mybox.web.to.Page;
+import mybox.to.Page;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,9 +19,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-
 @Controller
-@RequestMapping(value = "/mondo")
+@RequestMapping(value = "/md")
 public class MondoController extends AbstractFileController {
 
 	private static final Logger log = LoggerFactory.getLogger(MondoController.class);
@@ -69,6 +68,6 @@ public class MondoController extends AbstractFileController {
 	
 	@Override
 	protected int getServicePathLength() {
-		return 6;
+		return 3;
 	}
 }

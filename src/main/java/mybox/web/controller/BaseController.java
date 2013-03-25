@@ -3,13 +3,13 @@ package mybox.web.controller;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import mybox.common.to.User;
-import mybox.json.Json;
-import mybox.rest.Fault;
-import mybox.rest.FaultException;
+import mybox.exception.Error;
+import mybox.exception.ErrorException;
+import mybox.json.JsonConverter;
+import mybox.model.User;
+import mybox.to.Notice;
 import mybox.util.HttpUtil;
 import mybox.util.WebUtil;
-import mybox.web.to.Notice;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -20,7 +20,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
-
 
 public class BaseController {
 
@@ -62,7 +61,7 @@ public class BaseController {
 	protected String urlDecode(String encodedPath) {
 		String path = null;
 		if (StringUtils.isNotBlank(encodedPath)) {
-			path = HttpUtil.decodeUrl(encodedPath);
+			path = HttpUtil.decode(encodedPath);
 		}
 		return path;
 	}
@@ -117,12 +116,12 @@ public class BaseController {
 		request.setAttribute("notice", notice);
 	}
 	
-	@ExceptionHandler(FaultException.class)
+	@ExceptionHandler(ErrorException.class)
 	@ResponseBody
-	public ResponseEntity<String> handleFaultException(FaultException e, HttpServletRequest request) {
-		Fault fault = e.getFault();
-		log.warn("Got fault when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), fault});
-		return handleResponse(request, fault);
+	public ResponseEntity<String> handleFaultException(ErrorException e, HttpServletRequest request) {
+		Error error = e.getError();
+		log.warn("Got error when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), error});
+		return handleResponse(request, error);
 	}
 	
 	@ExceptionHandler(Exception.class)
@@ -130,12 +129,12 @@ public class BaseController {
 	public ResponseEntity<String> handleException(Exception e, HttpServletRequest request) {
 		log.error(e.getMessage(), e);
 		log.error("Got exception when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage()});
-		Fault fault = Fault.internalServerError(e.getMessage());
-		return handleResponse(request, fault);
+		Error error = Error.internalServerError(e.getMessage());
+		return handleResponse(request, error);
 	}
 	
-	protected ResponseEntity<String> handleResponse(HttpServletRequest request, Fault fault) {
-		String body = Json.toJson(fault);
+	protected ResponseEntity<String> handleResponse(HttpServletRequest request, Error fault) {
+		String body = JsonConverter.toJson(fault);
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		ResponseEntity<String> responseEntity = new ResponseEntity<String>(body, headers, HttpStatus.valueOf(fault.getCode()));

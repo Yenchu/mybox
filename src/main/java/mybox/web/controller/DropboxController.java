@@ -6,14 +6,14 @@ import java.io.InputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import mybox.common.to.ChunkedUploadParams;
-import mybox.common.to.EntryParams;
-import mybox.common.to.UploadParams;
-import mybox.common.to.User;
-import mybox.dropbox.model.FileEntry;
-import mybox.dropbox.model.MetadataEntry;
-import mybox.rest.Fault;
-import mybox.rest.FaultException;
+import mybox.exception.Error;
+import mybox.exception.ErrorException;
+import mybox.model.ChunkedUploadParams;
+import mybox.model.EntryParams;
+import mybox.model.UploadParams;
+import mybox.model.User;
+import mybox.model.dropbox.FileEntry;
+import mybox.model.dropbox.MetadataEntry;
 import mybox.service.DropboxService;
 import mybox.util.FileUtil;
 
@@ -26,9 +26,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-
 @Controller
-@RequestMapping(value = "/dropbox")
+@RequestMapping(value = "/db")
 public class DropboxController extends AbstractFileController {
 
 	private static final Logger log = LoggerFactory.getLogger(DropboxController.class);
@@ -45,7 +44,7 @@ public class DropboxController extends AbstractFileController {
 	
 	@Override
 	protected int getServicePathLength() {
-		return 8;
+		return 3;
 	}
 	
 	@Override
@@ -82,7 +81,7 @@ public class DropboxController extends AbstractFileController {
 		User user = getUser(request);
 		String path = getRestOfPath(request, getServicePathLength() + 9 + space.length());
 		if (path == null || "".equals(path)) {
-			throw new FaultException(Fault.badRequest("Browse file request from " + user.toString() + " doesn't have file path!"));
+			throw new ErrorException(Error.badRequest("Browse file request from " + user.toString() + " doesn't have file path!"));
 		}
 		log.info("User {} browse {}:{}", new Object[]{user.toString(), space, path});
 		

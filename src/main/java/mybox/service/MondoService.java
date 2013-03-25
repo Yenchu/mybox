@@ -2,9 +2,8 @@ package mybox.service;
 
 import java.util.List;
 
-import mybox.mondo.model.Group;
-import mybox.mondo.to.MondoUser;
-
+import mybox.model.mondo.Group;
+import mybox.model.mondo.MondoUser;
 
 public interface MondoService extends FileService {
 

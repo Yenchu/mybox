@@ -1,366 +1,170 @@
 package mybox.rest;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
+import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.StatusLine;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
-import org.apache.http.entity.InputStreamEntity;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.AbstractHttpMessage;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.gson.reflect.TypeToken;
+import mybox.json.JsonConverter;
 
 public class RestClientImpl implements RestClient {
-
-	private static final Logger log = LoggerFactory.getLogger(RestClientImpl.class);
-
-	protected static final String encoding = "UTF-8";
-
-	protected boolean usingHttps;
-
-	protected int httpsPort;
+	
+	protected RestConnection restConnection;
 
 	public RestClientImpl() {
-		this(false);
-	}
-
-	public RestClientImpl(boolean usingHttps) {
-		this(usingHttps, 443);
-	}
-
-	public RestClientImpl(boolean usingHttps, int httpsPort) {
-		this.usingHttps = usingHttps;
-		this.httpsPort = httpsPort;
 	}
 
 	public RestResponse<String> get(String url, String... headers) {
-		return get(url, null, headers);
-	}
-
-	public RestResponse<String> get(String url, Map<String, String> queryStr, String... headers) {
-		url = addQueryStringToUrl(url, queryStr);
-		HttpGet httpMethod = new HttpGet(url);
-		return execute(httpMethod, url, headers);
-	}
-
-	public RestResponse<InputStream> getStream(String url, String... headers) {
-		return getStream(url, null, headers);
-	}
-
-	public RestResponse<InputStream> getStream(String url, Map<String, String> queryStr, String... headers) {
-		url = addQueryStringToUrl(url, queryStr);
-		HttpGet httpMethod = new HttpGet(url);
-		return executeStream(httpMethod, url, headers);
-	}
-
-	public RestResponse<String> delete(String url, String... headers) {
-		return delete(url, null, headers);
-	}
-
-	public RestResponse<String> delete(String url, Map<String, String> queryStr, String... headers) {
-		url = addQueryStringToUrl(url, queryStr);
-		HttpDelete httpMethod = new HttpDelete(url);
-		return execute(httpMethod, url, headers);
-	}
-
-	public RestResponse<String> post(String url, String... headers) {
-		return post(url, "", headers);
-	}
-
-	public RestResponse<String> post(String url, String requestBody, String... headers) {
-		HttpPost httpMethod = new HttpPost(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, requestBody, headers);
-		return restResponse;
-	}
-
-	public RestResponse<String> post(String url, List<String> formParams, String... headers) {
-		HttpPost httpMethod = new HttpPost(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, formParams, headers);
-		return restResponse;
-	}
-
-	public RestResponse<String> post(String url, InputStream content, long contentLength, String... headers) {
-		HttpPost httpMethod = new HttpPost(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, content, contentLength, headers);
-		return restResponse;
-	}
-
-	public RestResponse<String> put(String url, String requestBody, String... headers) {
-		HttpPut httpMethod = new HttpPut(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, requestBody, headers);
+		RestResponse<String> restResponse = getRestConnection().get(url, headers);
+		RestResponseValidator.validateResponse(restResponse);
 		return restResponse;
 	}
 	
-	public RestResponse<String> put(String url, List<String> formParams, String... headers) {
-		HttpPut httpMethod = new HttpPut(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, formParams, headers);
+	public RestResponse<String> get(String url, Map<String, String> queryStr, String... headers) {
+		RestResponse<String> restResponse = getRestConnection().get(url, queryStr, headers);
+		RestResponseValidator.validateResponse(restResponse);
 		return restResponse;
 	}
-
+	
+	public RestResponse<InputStream> getStream(String url, String... headers) {
+		RestResponse<InputStream> restResponse = getRestConnection().getStream(url, headers);
+		RestResponseValidator.validateResponse(restResponse);
+		return restResponse;
+	}
+	
+	public RestResponse<String> post(String url, String... headers) {
+		RestResponse<String> restResponse = getRestConnection().post(url, headers);
+		RestResponseValidator.validateResponse(restResponse);
+		return restResponse;
+	}
+	
+	public RestResponse<String> post(String url, String body, String... headers) {
+		RestResponse<String> restResponse = getRestConnection().post(url, body, headers);
+		RestResponseValidator.validateResponse(restResponse);
+		return restResponse;
+	}
+	
+	public RestResponse<String> post(String url, List<String> formParams, String... headers) {
+		RestResponse<String> restResponse = getRestConnection().post(url, formParams, headers);
+		RestResponseValidator.validateResponse(restResponse);
+		return restResponse;
+	}
+	
+	public RestResponse<String> post(String url, InputStream content, long contentLength, String... headers) {
+		RestResponse<String> restResponse = getRestConnection().post(url, content, contentLength, headers);
+		RestResponseValidator.validateResponse(restResponse);
+		return restResponse;
+	}
+	
+	public RestResponse<String> put(String url, String body, String... headers) {
+		RestResponse<String> restResponse = getRestConnection().put(url, body, headers);
+		RestResponseValidator.validateResponse(restResponse);
+		return restResponse;
+	}
+	
 	public RestResponse<String> put(String url, InputStream content, long contentLength, String... headers) {
-		HttpPut httpMethod = new HttpPut(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, content, contentLength, headers);
+		RestResponse<String> restResponse = getRestConnection().put(url, content, contentLength, headers);
+		RestResponseValidator.validateResponse(restResponse);
+		return restResponse;
+	}
+	
+	public RestResponse<String> patch(String url, String body, String... headers) {
+		RestResponse<String> restResponse = getRestConnection().patch(url, body, headers);
+		RestResponseValidator.validateResponse(restResponse);
+		return restResponse;
+	}
+	
+	public RestResponse<String> delete(String url, String... headers) {
+		RestResponse<String> restResponse = getRestConnection().delete(url, headers);
+		RestResponseValidator.validateResponse(restResponse);
 		return restResponse;
 	}
 
-	protected RestResponse<String> execute(HttpRequestBase httpMethod, String url, String... headers) {
-		HttpClient httpclient = getHttpClient();
-		RestResponse<String> restResponse = null;
-		try {
-			addHeaders(httpMethod, headers);
-			HttpResponse response = httpclient.execute(httpMethod);
-			restResponse = getRestResponse(response);
-		} catch (IOException e) {
-			StringBuilder buf = new StringBuilder().append("Connecting to ").append(url).append(" got exception: ").append(e.getMessage());
-			String msg = buf.toString();
-			log.error(msg, e);
-			throw new FaultException(Fault.formatError(msg));
-		} finally {
-			releaseConnection(httpclient);
+	public <T> T get(RestResponseConverter<String, T> converter, String url, String... headers) {
+		RestResponse<String> restResponse = getRestConnection().get(url, headers);
+		T entity = converter.convert(restResponse);
+		return entity;
+	}
+	
+	public <T> T post(RestResponseConverter<String, T> converter, String url, List<String> formParams, String... headers) {
+		RestResponse<String> restResponse = getRestConnection().post(url, formParams, headers);
+		T entity = converter.convert(restResponse);
+		return entity;
+	}
+	
+	public <T> T put(RestResponseConverter<String, T> converter, String url, InputStream content, long contentLength, String... headers) {
+		RestResponse<String> restResponse = getRestConnection().put(url, content, contentLength, headers);
+		T entity = converter.convert(restResponse);
+		return entity;
+	}
+	
+	public <T> T get(Class<T> clazz, String url, String... headers) {
+		RestResponse<String> restResponse = get(url, headers);
+		T entity = JsonConverter.fromJson(restResponse.getBody(), clazz);
+		return entity;
+	}
+	
+	public <T> T get(Class<T> clazz, String url, Map<String, String> queryStr, String... headers) {
+		RestResponse<String> restResponse = get(url, queryStr, headers);
+		T entity = JsonConverter.fromJson(restResponse.getBody(), clazz);
+		return entity;
+	}
+
+	public <T> List<T> list(Class<T> clazz, String url, String... headers) {
+		RestResponse<String> restResponse = getRestConnection().get(url, headers);
+		RestResponseValidator.validateResponse(restResponse);
+		Type type = new TypeToken<List<T>>(){}.getType();
+		List<T> entities = JsonConverter.fromJson(restResponse.getBody(), type);
+		return entities;
+	}
+	
+	public <T> T post(Class<T> clazz, String url, String... headers) {
+		RestResponse<String> restResponse = post(url, headers);
+		T entity = JsonConverter.fromJson(restResponse.getBody(), clazz);
+		return entity;
+	}
+	
+	public <T> T post(Class<T> clazz, String url, String body, String... headers) {
+		RestResponse<String> restResponse = post(url, body, headers);
+		T entity = JsonConverter.fromJson(restResponse.getBody(), clazz);
+		return entity;
+	}
+	
+	public <T> T post(Class<T> clazz, String url, List<String> formParams, String... headers) {
+		RestResponse<String> restResponse = post(url, formParams, headers);
+		T entity = JsonConverter.fromJson(restResponse.getBody(), clazz);
+		return entity;
+	}
+	
+	public <T> T post(Class<T> clazz, String url, InputStream content, long contentLength, String... headers) {
+		RestResponse<String> restResponse = post(url, content, contentLength, headers);
+		T entity = JsonConverter.fromJson(restResponse.getBody(), clazz);
+		return entity;
+	}
+	
+	public <T> T put(Class<T> clazz, String url, String body, String... headers) {
+		RestResponse<String> restResponse = put(url, body, headers);
+		T entity = JsonConverter.fromJson(restResponse.getBody(), clazz);
+		return entity;
+	}
+	
+	public <T> T put(Class<T> clazz, String url, InputStream content, long contentLength, String... headers) {
+		RestResponse<String> restResponse = put(url, content, contentLength, headers);
+		T entity = JsonConverter.fromJson(restResponse.getBody(), clazz);
+		return entity;
+	}
+	
+	public <T> T patch(Class<T> clazz, String url, String body, String... headers) {
+		RestResponse<String> restResponse = patch(url, body, headers);
+		T entity = JsonConverter.fromJson(restResponse.getBody(), clazz);
+		return entity;
+	}
+	
+	protected RestConnection getRestConnection() {
+		if (restConnection == null) {
+			restConnection = new RestConnectionImpl();
 		}
-		return restResponse;
-	}
-
-	protected RestResponse<String> execute(HttpEntityEnclosingRequestBase httpMethod, String url, String requestBody,
-			String... headers) {
-		HttpClient httpclient = getHttpClient();
-		RestResponse<String> restResponse = null;
-		try {
-			addHeaders(httpMethod, headers);
-
-			if (requestBody != null) {
-				StringEntity entity = new StringEntity(requestBody);
-				httpMethod.setEntity(entity);
-			}
-
-			HttpResponse response = httpclient.execute(httpMethod);
-			restResponse = getRestResponse(response);
-		} catch (IOException e) {
-			StringBuilder buf = new StringBuilder().append("Connecting to ").append(url).append(" got exception: ").append(e.getMessage());
-			String msg = buf.toString();
-			log.error(msg, e);
-			throw new FaultException(Fault.formatError(msg));
-		} finally {
-			releaseConnection(httpclient);
-		}
-		return restResponse;
-	}
-
-	protected RestResponse<String> execute(HttpEntityEnclosingRequestBase httpMethod, String url,
-			List<String> formParams, String... headers) {
-		HttpClient httpclient = getHttpClient();
-		RestResponse<String> restResponse = null;
-		try {
-			addHeaders(httpMethod, headers);
-
-			if (formParams != null && formParams.size() > 0) {
-				int size = formParams.size();
-				if (size % 2 != 0) {
-					throw new IllegalArgumentException("Params must be in pairs!");
-				}
-
-				List<NameValuePair> nvps = new ArrayList<NameValuePair>();
-				for (int i = 0; i < size; i += 2) {
-					String value = formParams.get(i + 1);
-					if (value != null) {
-						String name = formParams.get(i);
-						nvps.add(new BasicNameValuePair(name, value));
-					}
-				}
-				UrlEncodedFormEntity entity = new UrlEncodedFormEntity(nvps, "UTF-8");
-				httpMethod.setEntity(entity);
-			}
-
-			HttpResponse response = httpclient.execute(httpMethod);
-			restResponse = getRestResponse(response);
-		} catch (IOException e) {
-			StringBuilder buf = new StringBuilder().append("Connecting to ").append(url).append(" got exception: ").append(e.getMessage());
-			String msg = buf.toString();
-			log.error(msg, e);
-			throw new FaultException(Fault.formatError(msg));
-		} finally {
-			releaseConnection(httpclient);
-		}
-		return restResponse;
-	}
-
-	protected RestResponse<String> execute(HttpEntityEnclosingRequestBase httpMethod, String url, InputStream is,
-			long length, String... headers) {
-		HttpClient httpclient = getHttpClient();
-		RestResponse<String> restResponse = null;
-		try {
-			addHeaders(httpMethod, headers);
-
-			InputStreamEntity entity = new InputStreamEntity(is, length);
-			entity.setContentEncoding("application/octet-stream");
-			entity.setChunked(false);
-			httpMethod.setEntity(entity);
-
-			HttpResponse response = httpclient.execute(httpMethod);
-			restResponse = getRestResponse(response);
-		} catch (IOException e) {
-			StringBuilder buf = new StringBuilder().append("Connecting to ").append(url).append(" got exception: ").append(e.getMessage());
-			String msg = buf.toString();
-			log.error(msg, e);
-			throw new FaultException(Fault.formatError(msg));
-		} finally {
-			releaseConnection(httpclient);
-		}
-		return restResponse;
-	}
-
-	protected RestResponse<InputStream> executeStream(HttpRequestBase httpMethod, String url, String... headers) {
-		HttpClient httpclient = getHttpClient();
-		RestResponse<InputStream> restResponse = null;
-		try {
-			addHeaders(httpMethod, headers);
-			HttpResponse response = httpclient.execute(httpMethod);
-			restResponse = getRestResponseAsStream(httpclient, response);
-		} catch (IOException e) {
-			StringBuilder buf = new StringBuilder().append("Connecting to ").append(url).append(" got exception: ").append(e.getMessage());
-			String msg = buf.toString();
-			log.error(msg, e);
-			releaseConnection(httpclient);
-			throw new FaultException(Fault.formatError(msg));
-		}
-		//* connection is released by calling HttpComponentInputStream.close()
-		/*finally {
-			releaseConnection(httpclient);
-		}*/
-		return restResponse;
-	}
-
-	protected HttpClient getHttpClient() {
-		HttpClient httpclient = new DefaultHttpClient();
-		if (usingHttps) {
-			try {
-				SSLSocketFactory sf = new SSLSocketFactory(new TrustSelfSignedStrategy(),
-						SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-				Scheme https = new Scheme("https", httpsPort, sf);
-				httpclient.getConnectionManager().getSchemeRegistry().register(https);
-			} catch (Exception e) {
-				log.error(e.getMessage(), e);
-				throw new FaultException(Fault.formatError(e.getMessage()));
-			}
-		}
-		return httpclient;
-	}
-
-	protected void releaseConnection(HttpClient httpclient) {
-		httpclient.getConnectionManager().shutdown();
-	}
-
-	protected String addQueryStringToUrl(String url, Map<String, String> queryParameters) {
-		if (queryParameters == null || queryParameters.size() <= 0) {
-			return url;
-		}
-
-		boolean hasQryStrAlready = false;
-		if (url.endsWith("?")) {
-			hasQryStrAlready = true;
-		}
-
-		StringBuilder queryString = new StringBuilder();
-		for (Map.Entry<String, String> entry : queryParameters.entrySet()) {
-			if (hasQryStrAlready) {
-				queryString.append("&");
-			} else {
-				queryString.append("?");
-				hasQryStrAlready = true;
-			}
-			queryString.append(entry.getKey()).append("=").append(entry.getValue());
-		}
-		url += queryString.toString();
-		return url;
-	}
-
-	protected void addHeaders(AbstractHttpMessage httpMethod, String... headers) {
-		if (headers == null || headers.length <= 0) {
-			return;
-		}
-
-		if (headers.length % 2 != 0) {
-			throw new IllegalArgumentException("Headers must be in pairs!");
-		}
-
-		for (int index = 0, len = headers.length; index < len; index = index + 2) {
-			httpMethod.addHeader(headers[index], headers[index + 1]);
-		}
-	}
-
-	protected RestResponse<String> getRestResponse(HttpResponse response) throws IOException {
-		RestResponse<String> restResponse = new RestResponse<String>();
-		extractHeaders(response, restResponse);
-
-		HttpEntity responseEntity = response.getEntity();
-		String responseBody = null;
-		if (responseEntity != null) {
-			responseBody = EntityUtils.toString(responseEntity, encoding);
-		} else {
-			responseBody = "";
-		}
-		restResponse.setBody(responseBody);
-		return restResponse;
-	}
-
-	protected RestResponse<InputStream> getRestResponseAsStream(HttpClient httpclient, HttpResponse response)
-			throws IOException {
-		RestResponse<InputStream> restResponse = new RestResponse<InputStream>();
-		extractHeaders(response, restResponse);
-
-		HttpEntity responseEntity = response.getEntity();
-		HttpComponentInputStream hcis = new HttpComponentInputStream(httpclient, responseEntity);
-		restResponse.setBody(hcis);
-		return restResponse;
-	}
-
-	protected void extractHeaders(HttpResponse response, RestResponse<?> restResponse) {
-		Header[] headers = response.getAllHeaders();
-		for (Header header : headers) {
-			String name = header.getName();
-			String value = header.getValue();
-			restResponse.addHeader(name, value);
-		}
-
-		StatusLine statusLine = response.getStatusLine();
-		int statusCode = statusLine.getStatusCode();
-		restResponse.setStatusCode(statusCode);
-	}
-
-	public boolean isUsingHttps() {
-		return usingHttps;
-	}
-
-	public void setUsingHttps(boolean usingHttps) {
-		this.usingHttps = usingHttps;
-	}
-
-	public int getHttpsPort() {
-		return httpsPort;
-	}
-
-	public void setHttpsPort(int httpsPort) {
-		this.httpsPort = httpsPort;
+		return restConnection;
 	}
 }
