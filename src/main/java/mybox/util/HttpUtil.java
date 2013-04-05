@@ -33,7 +33,7 @@ public class HttpUtil {
 				continue;
 			}
 			encodedHeaders[i] = header;
-			encodedHeaders[i + 1] = encode(value);
+			encodedHeaders[i + 1] = encodeUrl(value);
 		}
 	}
 	
@@ -51,15 +51,15 @@ public class HttpUtil {
 				} else {
 					buf.append("&");
 				}
-				String name = encode(qryStr[i]);
-				String value = encode(qryStr[i + 1]);
+				String name = encodeUrl(qryStr[i]);
+				String value = encodeUrl(qryStr[i + 1]);
 				buf.append(name).append("=").append(value);
 			}
 		}
 		return buf.toString();
 	}
 	
-	public static String encode(String str) {
+	public static String encodeUrl(String str) {
 		try {
 			return URLEncoder.encode(str, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
@@ -68,12 +68,29 @@ public class HttpUtil {
 		}
 	}
 
-	public static String decode(String str) {
+	public static String decodeUrl(String str) {
 		try {
 			return URLDecoder.decode(str, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			log.error(e.getMessage(), e);
 			return str;
 		}
+	}
+	
+	
+	/**
+	 * Tomcat servlet container uses ISO-8859-1 to decode URL.
+	 * @param id
+	 * @return
+	 */
+	public static String toUTF8(String encodedStr) {
+		String str = null;
+		try {
+			str = new String(encodedStr.getBytes("ISO-8859-1"), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			log.error(e.getMessage(), e);
+			str = encodedStr;
+		}
+		return str;
 	}
 }

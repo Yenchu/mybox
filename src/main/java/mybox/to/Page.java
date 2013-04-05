@@ -5,12 +5,10 @@ import java.util.Collection;
 public class Page<T> {
 
 	private int page;
-	
-	private int totalPages;
-	
+
 	private int pageSize;
 	
-	private Collection<T> rows;
+	private Collection<T> records;
 	
 	private long totalRecords;
 
@@ -18,7 +16,7 @@ public class Page<T> {
 	}
 	
 	public Page(Collection<T> records) {
-		this.rows = records;
+		this.records = records;
 	}
 
 	public int getPage() {
@@ -29,14 +27,6 @@ public class Page<T> {
 		this.page = page;
 	}
 
-	public int getTotalPages() {
-		return totalPages;
-	}
-
-	public void setTotalPages(int totalPages) {
-		this.totalPages = totalPages;
-	}
-
 	public int getPageSize() {
 		return pageSize;
 	}
@@ -45,12 +35,12 @@ public class Page<T> {
 		this.pageSize = pageSize;
 	}
 
-	public Collection<T> getRows() {
-		return rows;
+	public Collection<T> getRecords() {
+		return records;
 	}
 
-	public void setRows(Collection<T> records) {
-		this.rows = records;
+	public void setRecords(Collection<T> records) {
+		this.records = records;
 	}
 
 	public long getTotalRecords() {

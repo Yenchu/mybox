@@ -33,7 +33,7 @@ public class AuthController extends BaseController {
 	
 	@RequestMapping(value="/logout")
 	public String logout(HttpServletRequest request, HttpSession session) {
-		User user = getUser(request);
+		User user = WebUtil.getUser(request);
 		log.debug("User {} from {} logout!", user, WebUtil.getUserAddress(request));
 		session.removeAttribute("user");
 		return "login";
@@ -41,7 +41,7 @@ public class AuthController extends BaseController {
 	
 	public enum ServiceType {
 
-		DISK("dk"), DROPBOX("db"), MONDO("md");
+		DISK("dk"), DROPBOX("db"), FILECRUISER("fc");
 		
 		private final String value;
 		

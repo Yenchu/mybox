@@ -1,12 +1,14 @@
 package mybox.model;
 
 public class LoginParams {
+	
+	private String domain;
 
 	private String username;
 
 	private String password;
 	
-	private String address;
+	private String ip;
 
 	public LoginParams() {
 	}
@@ -14,6 +16,20 @@ public class LoginParams {
 	public LoginParams(String username, String password) {
 		this.username = username;
 		this.password = password;
+	}
+	
+	public LoginParams(String domain, String username, String password) {
+		this.domain = domain;
+		this.username = username;
+		this.password = password;
+	}
+
+	public String getDomain() {
+		return domain;
+	}
+
+	public void setDomain(String domain) {
+		this.domain = domain;
 	}
 
 	public String getUsername() {
@@ -32,11 +48,11 @@ public class LoginParams {
 		this.password = password;
 	}
 
-	public String getAddress() {
-		return address;
+	public String getIp() {
+		return ip;
 	}
 
-	public void setAddress(String address) {
-		this.address = address;
+	public void setIp(String ip) {
+		this.ip = ip;
 	}
 }

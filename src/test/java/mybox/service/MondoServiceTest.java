@@ -2,14 +2,14 @@ package mybox.service;
 
 import java.util.List;
 
-import mybox.BaseUnitTest;
+import mybox.SpringUnitTest;
 import mybox.model.CreateParams;
 import mybox.model.LoginParams;
+import mybox.model.MetadataEntry;
 import mybox.model.MetadataParams;
 import mybox.model.Params;
 import mybox.model.PathParams;
 import mybox.model.Space;
-import mybox.model.dropbox.MetadataEntry;
 import mybox.model.mondo.Group;
 import mybox.model.mondo.MondoUser;
 import mybox.service.MondoService;
@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 
-public class MondoServiceTest extends BaseUnitTest {
+public class MondoServiceTest extends SpringUnitTest {
 
 	private static final Logger log = LoggerFactory.getLogger(MondoServiceTest.class);
 	

@@ -37,10 +37,16 @@ import mybox.model.ChunkedUploadParams;
 import mybox.model.CopyParams;
 import mybox.model.CreateParams;
 import mybox.model.DeleteParams;
+import mybox.model.DeltaEntry;
+import mybox.model.DeltaPage;
 import mybox.model.DeltaParams;
 import mybox.model.EntryParams;
+import mybox.model.EntryUtil;
+import mybox.model.FileEntry;
+import mybox.model.Link;
 import mybox.model.LinkParams;
 import mybox.model.LoginParams;
+import mybox.model.MetadataEntry;
 import mybox.model.MetadataParams;
 import mybox.model.MoveParams;
 import mybox.model.Params;
@@ -51,12 +57,7 @@ import mybox.model.Space;
 import mybox.model.ThumbnailParams;
 import mybox.model.UploadParams;
 import mybox.model.User;
-import mybox.model.dropbox.DeltaEntry;
-import mybox.model.dropbox.DeltaPage;
 import mybox.model.dropbox.DropboxUser;
-import mybox.model.dropbox.FileEntry;
-import mybox.model.dropbox.Link;
-import mybox.model.dropbox.MetadataEntry;
 import mybox.rest.RestClient;
 import mybox.rest.RestResponse;
 import mybox.rest.RestResponseConverter;
@@ -77,7 +78,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 @Service
-public class DropboxServiceImpl extends AbstractFileService implements DropboxService {
+public class DropboxServiceImpl implements DropboxService {
 
 	private static final Logger log = LoggerFactory.getLogger(DropboxServiceImpl.class);
 
@@ -93,13 +94,13 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 
 	public User auth(LoginParams params) {
 		if (!params.getPassword().equals("cloud")) {
-			log.info("{} from {} login failed!", params.getUsername(), params.getAddress());
+			log.info("{} from {} login failed!", params.getUsername(), params.getIp());
 			return null;
 		}
 
 		DropboxUser user = getDefaultUser();
 		user.setName(params.getUsername());
-		user.setAddress(params.getAddress());
+		user.setIp(params.getIp());
 		return user;
 	}
 	
@@ -130,7 +131,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String[] headers = getSignedHeaders(user);
 		
 		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
-		customEntries(space, entry);
+		EntryUtil.customEntries(space, entry);
 		return entry;
 	}
 
@@ -145,13 +146,13 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String[] headers = getSignedHeaders(user);
 		
 		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
-		customEntries(space, entry);
+		EntryUtil.customEntries(space, entry);
 		return entry;
 	}
 
 	public MetadataEntry getFolders(MetadataParams params) {
 		MetadataEntry parentEntry = getFiles(params);
-		List<MetadataEntry> folderEntries = getFolders(parentEntry.getContents());
+		List<MetadataEntry> folderEntries = EntryUtil.getFolders(parentEntry.getContents());
 		parentEntry.setContents(folderEntries);
 		return parentEntry;
 	}
@@ -166,7 +167,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String[] headers = getSignedHeaders(user);
 
 		RestResponse<InputStream> restResponse = restClient.getStream(url, headers);
-		FileEntry entry = convertDownloadResponse(restResponse, "x-dropbox-metadata");
+		FileEntry entry = EntryUtil.convertDownloadResponse(restResponse, "x-dropbox-metadata");
 		return entry;
 	}
 
@@ -243,7 +244,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String[] headers = getSignedHeaders(user);
 
 		List<MetadataEntry> entries = restClient.get(metadataListResponseHandler, url, headers);
-		customEntries(entries);
+		EntryUtil.customEntries(entries);
 		return entries;
 	}
 
@@ -297,7 +298,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		String[] headers = getSignedHeaders(user);
 
 		List<MetadataEntry> entries = restClient.post(metadataListResponseHandler, url, fields, headers);
-		customEntries(entries);
+		EntryUtil.customEntries(entries);
 		return entries;
 	}
 
@@ -335,7 +336,7 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 	protected List<FileOperationResponse> post(BulkParams params, String url) {
 		List<List<String>> fieldsList = params.getParamList();
 		if (fieldsList == null || fieldsList.size() < 1) {
-			throw new ErrorException(Error.badRequest("No any to-be-deleted path!"));
+			throw new ErrorException(Error.badRequest("No any selected files!"));
 		}
 
 		DropboxUser user = getUser(params);
@@ -372,9 +373,8 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		return result;
 	}
 	
-	@Override
 	protected void customEntry(MetadataEntry entry) {
-		super.customEntry(entry);
+		EntryUtil.customEntry(entry);
 		
 		String modified = entry.getModified();
 		if (modified == null || modified.equals("")) {

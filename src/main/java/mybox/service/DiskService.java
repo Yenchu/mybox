@@ -1,6 +1,6 @@
 package mybox.service;
 
-import mybox.model.dropbox.MetadataEntry;
+import mybox.model.MetadataEntry;
 import mybox.to.Page;
 
 import org.springframework.data.domain.Pageable;

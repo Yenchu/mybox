@@ -1,6 +1,6 @@
 package mybox.to;
 
-import mybox.model.dropbox.MetadataEntry;
+import mybox.model.MetadataEntry;
 
 public class FileOperationResponse {
 

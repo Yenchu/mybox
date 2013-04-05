@@ -14,7 +14,7 @@ public class MondoUtil {
 	private static final Logger log = LoggerFactory.getLogger(MondoUtil.class);
 	
 	public static String encodeUrl(String str) {
-		String encodedStr = HttpUtil.encode(str);
+		String encodedStr = HttpUtil.encodeUrl(str);
 		encodedStr = encodedStr.replace("%2F", "/").replace("+", "%20").replace("*", "%2A");
 		return encodedStr;
 	}
@@ -29,7 +29,7 @@ public class MondoUtil {
 		}
 
 		int idx = signedHeaders.length - 2;
-		signedHeaders[idx] = HttpHeader.AUTH_TOKEN.value();
+		signedHeaders[idx] = Header.AUTH_TOKEN.value();
 		signedHeaders[idx + 1] = user.getToken();
 		return signedHeaders;
 	}

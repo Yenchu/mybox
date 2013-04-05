@@ -1,20 +1,32 @@
 package mybox.util;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
-import org.apache.commons.lang3.StringUtils;
+import mybox.model.User;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class WebUtil {
 
 	private static final Logger log = LoggerFactory.getLogger(WebUtil.class);
+
+	public static User getUser(HttpServletRequest request) {
+		HttpSession session = request.getSession();
+		User user = (User) session.getAttribute("user");
+		return user;
+	}
+	
+	public static void setUser(HttpServletRequest request, User user) {
+		HttpSession session = request.getSession();
+		session.setAttribute("user", user);
+	}
 	
 	public static String getUserAddress(HttpServletRequest request) {
 		// if there isn't the X-Forwarded-For header, get user address instead 
@@ -53,24 +65,6 @@ public class WebUtil {
 			path = pathWoContext.substring(idx);
 		} else {
 			path = pathWoContext;
-		}
-		return path;
-	}
-	
-	
-	/**
-	 * Tomcat servlet container uses ISO-8859-1 to decode URL.
-	 * @param id
-	 * @return
-	 */
-	protected String pathDecode(String encodedPath) {
-		String path = null;
-		if (StringUtils.isNotBlank(encodedPath)) {
-			try {
-				path = new String(encodedPath.getBytes("ISO-8859-1"), "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				log.error(e.getMessage(), e);
-			}
 		}
 		return path;
 	}

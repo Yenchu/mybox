@@ -25,7 +25,7 @@ public class UserController extends BaseController {
 	
 	@RequestMapping(value="/account/profile")
 	public String getProfile(HttpServletRequest request) {
-		User user = getUser(request);
+		User user = WebUtil.getUser(request);
 		Account account = new Account();
 		account.setDisplayName(user.getName());
 		account.setQuota(1000);
@@ -37,7 +37,7 @@ public class UserController extends BaseController {
 	@RequestMapping(value="/account/profile", method = RequestMethod.POST)
 	public String setProfile(@ModelAttribute("account") Account account, HttpServletRequest request) {
 		WebUtil.logParameters(request);
-		log.debug("account name={}, quota={}, role={}", new Object[]{account.getDisplayName(), account.getQuota(), account.getRole()});
+		log.debug("account name={}, quota={}, role={}", account.getDisplayName(), account.getQuota(), account.getRole());
 		return "account";
 	}
 	

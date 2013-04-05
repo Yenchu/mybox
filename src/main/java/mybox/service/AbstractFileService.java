@@ -65,7 +65,7 @@ public abstract class AbstractFileService {
 		
 		String path = folderEntry.getPath();
 		if (space.getRoot().equals(path)) {
-			folderEntry.setId(HttpUtil.encode(path));
+			folderEntry.setId(HttpUtil.encodeUrl(path));
 			folderEntry.setName(space.getName());
 			folderEntry.setLocation("");
 		} else {
@@ -92,7 +92,7 @@ public abstract class AbstractFileService {
 			return;
 		}
 		
-		String id = HttpUtil.encode(path);
+		String id = HttpUtil.encodeUrl(path);
 		entry.setId(id);
 
 		int idx = path.lastIndexOf('/');

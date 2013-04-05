@@ -1,10 +1,12 @@
 package mybox.web.interceptor;
 
+import static mybox.backend.dropbox.DropboxUtil.getDefaultUser;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import mybox.model.User;
+import mybox.model.dropbox.DropboxUser;
 import mybox.util.WebUtil;
 
 import org.slf4j.Logger;
@@ -18,8 +20,7 @@ public class AppInterceptor extends HandlerInterceptorAdapter {
 	
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-		HttpSession session = request.getSession();
-		User user = (User) session.getAttribute("user");
+		User user = WebUtil.getUser(request);
 		if (user == null) {
 			String path = WebUtil.getPathAfterServicePath(request);
 			if (!path.equals("/login") && !path.startsWith("/login?")) {
@@ -28,6 +29,9 @@ public class AppInterceptor extends HandlerInterceptorAdapter {
 				response.sendRedirect(contextPath + "/login");
 				return false;
 			}
+			/*user = getDefaultUser();
+			user.setName("Guest");
+			WebUtil.setUser(request, user);*/
 		}
 		return true;
 	}

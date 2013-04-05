@@ -233,7 +233,7 @@ public class DropboxUtil {
 	}
 	
 	private static String encode(String s) {
-		return HttpUtil.encode(s);
+		return HttpUtil.encodeUrl(s);
 	}
 	
 	// methods using Dropbox API for test

@@ -18,8 +18,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Configuration
-@EnableAsync
 @EnableAspectJAutoProxy
+@EnableAsync
 @PropertySource("classpath:app.properties")
 @Import({ServiceConfig.class})
 @ComponentScan("mybox.task")
@@ -33,6 +33,11 @@ public class AppConfig implements AsyncConfigurer {
         executor.setQueueCapacity(50);
         executor.initialize();
         return executor;
+	}
+
+	@Bean
+	public SystemProp systemProp() {
+		return new SystemProp();
 	}
 	
 	@Bean

@@ -18,10 +18,14 @@ import mybox.json.JsonConverter;
 import mybox.model.CopyParams;
 import mybox.model.CreateParams;
 import mybox.model.DeleteParams;
+import mybox.model.DeltaPage;
 import mybox.model.DeltaParams;
 import mybox.model.EntryParams;
+import mybox.model.FileEntry;
+import mybox.model.Link;
 import mybox.model.LinkParams;
 import mybox.model.LoginParams;
+import mybox.model.MetadataEntry;
 import mybox.model.MetadataParams;
 import mybox.model.MoveParams;
 import mybox.model.Params;
@@ -31,10 +35,6 @@ import mybox.model.Space;
 import mybox.model.ThumbnailParams;
 import mybox.model.UploadParams;
 import mybox.model.User;
-import mybox.model.dropbox.DeltaPage;
-import mybox.model.dropbox.FileEntry;
-import mybox.model.dropbox.Link;
-import mybox.model.dropbox.MetadataEntry;
 import mybox.service.FileService;
 import mybox.to.AuthResponse;
 import mybox.to.FileOperationResponse;
@@ -80,17 +80,16 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "username", required = false) String username,
 			@RequestParam(value = "password", required = false) String password,
 			HttpServletRequest request) {
-		String address = WebUtil.getUserAddress(request);
-		log.info("User {} from {} login!", new Object[] {username, address});
+		String ip = WebUtil.getUserAddress(request);
+		log.info("User {} from {} login!", username, ip);
 		
 		LoginParams param = new LoginParams(username, password);
-		param.setAddress(address);
+		param.setIp(ip);
 		User user = getService().auth(param);
-		
 		if (user == null) {
 			throw new ErrorException(Error.unauthorized());
 		}
-		setUser(request, user);
+		WebUtil.setUser(request, user);
 		
 		String path = WebUtil.getFirstPathAfterContextPath(request);
 		String serviceUrl = request.getContextPath() + path;
@@ -108,9 +107,9 @@ public abstract class AbstractFileController extends BaseController {
 	public String getFiles(
 			@RequestParam(value = "space", required = false) String spaceId,
 			HttpServletRequest request) {
-		User user = getUser(request);
+		User user = WebUtil.getUser(request);
 		String folder = getRestOfPath(request, getServicePathLength() + 9); // 8 + 9: sum of length(/dropbox + /metadata)
-		log.debug("User {} list {}:{}", new Object[]{user, (spaceId != null ? spaceId : "root"), folder});
+		log.debug("User {} list {}:{}", user, (spaceId != null ? spaceId : "root"), folder);
 		
 		Params params = new Params();
 		params.setUser(user);
@@ -131,22 +130,26 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "space", required = false) String space, 
 			@RequestParam(value = "folder", required = false) String folder, 
 			HttpServletRequest request) {
-		User user = getUser(request);
-		String path = urlDecode(folder);
-		log.debug("User {} page {}:{}", new Object[]{user.toString(), space, path});
+		User user = WebUtil.getUser(request);
+		String path = decodeUrl(folder);
+		log.debug("User {} page {}:{}", user.toString(), space, path);
 
 		MetadataParams params = new MetadataParams(user, space, path);
 		params.setList(true);
 		MetadataEntry entry = getService().getFiles(params);
 
-		List<MetadataEntry> entries = entry.getContents();
-		if (entries != null) {
-			sortByFolder(entries);
-		} else {
+		List<MetadataEntry> entries = null;
+		if (entry != null) {
+			entries = entry.getContents();
+			if (entries != null && entries.size() > 0) {
+				sortByFolder(entries);
+			}
+		}
+		if (entries == null) {
 			//* just return empty list to jqGrid
 			entries = new ArrayList<MetadataEntry>();
 		}
-
+		
 		Page<MetadataEntry> page = new Page<MetadataEntry>(entries);
 		return page;
 	}
@@ -157,9 +160,9 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "space", required = false) String space, 
 			@RequestParam(value = "folder", required = false) String folder, 
 			HttpServletRequest request) {
-		User user = getUser(request);
-		String path = urlDecode(folder);
-		log.debug("User {} dir {}:{}", new Object[]{user.toString(), space, path});
+		User user = WebUtil.getUser(request);
+		String path = decodeUrl(folder);
+		log.debug("User {} dir {}:{}", user.toString(), space, path);
 		
 		MetadataParams params = new MetadataParams(user, space, path);
 		params.setList(true);
@@ -184,9 +187,9 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "space", required = false) String space, 
 			@RequestParam(value = "folder", required = false) String folder, 
 			HttpServletRequest request) {
-		User user = getUser(request);
-		String path = urlDecode(folder);
-		log.debug("User {} dir {}:{}", new Object[]{user.toString(), space, path});
+		User user = WebUtil.getUser(request);
+		String path = decodeUrl(folder);
+		log.debug("User {} dir {}:{}", user.toString(), space, path);
 		
 		MetadataParams params = new MetadataParams(user, space, path);
 		params.setList(true);
@@ -206,12 +209,12 @@ public abstract class AbstractFileController extends BaseController {
 	public void download(
 			@PathVariable String space, 
 			HttpServletRequest request, HttpServletResponse response) {
-		User user = getUser(request);
+		User user = WebUtil.getUser(request);
 		String path = getRestOfPath(request, getServicePathLength() + 7 + space.length()); // 8 + 6 + (1 + space.length)
 		if (path == null || "".equals(path)) {
 			throw new ErrorException(Error.badRequest("Download file request from " + user.toString() + " doesn't have file path!"));
 		}
-		log.info("User {} download {}:{}", new Object[]{user.toString(), space, path});
+		log.info("User {} download {}:{}", user.toString(), space, path);
 		
 		EntryParams params = new EntryParams(user, space, path);
 		FileEntry entry = getService().download(params);
@@ -228,7 +231,7 @@ public abstract class AbstractFileController extends BaseController {
 			String userAgent = request.getHeader("user-agent");
 			if (UserAgentParser.isIE(userAgent)) {
 				// IE required URL-encoded file name 
-				response.setHeader("Content-Disposition", "attachment; filename=\"" + HttpUtil.encode(fileName).replace("+", "%20") + "\"");
+				response.setHeader("Content-Disposition", "attachment; filename=\"" + HttpUtil.encodeUrl(fileName).replace("+", "%20") + "\"");
 			} else if (UserAgentParser.isSafari(userAgent)) {
 				// Safari doesn't support non US-ASCII characters in file name
 				response.setCharacterEncoding("UTF-8");
@@ -257,12 +260,12 @@ public abstract class AbstractFileController extends BaseController {
 	public void getThumbnail( 
 			@PathVariable String space, 
 			HttpServletRequest request, HttpServletResponse response) {
-		User user = getUser(request);
+		User user = WebUtil.getUser(request);
 		String path = getRestOfPath(request, getServicePathLength() + 12 + space.length()); // 8 + 11 + (1 + space.length)
 		if (path == null || "".equals(path)) {
 			throw new ErrorException(Error.badRequest("Get thumbnail request from " + user.toString() + " doesn't have file path!"));
 		}
-		log.debug("User {} get thumbnail {}:{}", new Object[]{user.toString(), space, path});
+		log.debug("User {} get thumbnail {}:{}", user.toString(), space, path);
 		
 		ThumbnailParams params = new ThumbnailParams(user, space, path);
 		InputStream content = getService().getThumbnail(params);
@@ -281,7 +284,7 @@ public abstract class AbstractFileController extends BaseController {
 	public void upload( 
 			@RequestParam(value = "detectFileSize", required = false) Boolean detectFileSize, 
 			HttpServletRequest request, HttpServletResponse response) {
-		User user = getUser(request);
+		User user = WebUtil.getUser(request);
 		log.info("User {} upload file: detectFileSize={}", user.toString(), detectFileSize);
 		
 		List<UploadResponse> uploadResps = null;
@@ -294,7 +297,7 @@ public abstract class AbstractFileController extends BaseController {
 		
 		for (UploadResponse uploadResp: uploadResps) {
 			String result = (uploadResp.getError() != null ? uploadResp.getError() : "success");
-			log.debug("Uploading {} size {} result: {}.", new Object[] {uploadResp.getName(), uploadResp.getSize(), result});
+			log.debug("Uploading {} size {} result: {}.", uploadResp.getName(), uploadResp.getSize(), result);
 		}
 		
 		try {
@@ -305,17 +308,17 @@ public abstract class AbstractFileController extends BaseController {
 			response.getWriter().flush();
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
-			log.error("Got exception when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage()});
+			log.error("Got exception when handling request {} from {}: {}", request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage());
 		}
 	}
 	
 	@RequestMapping(value = "/delta", method = RequestMethod.POST)
 	@ResponseBody
-	public DeltaPage<MetadataEntry> delta( 
+	public DeltaPage<MetadataEntry> delta(
 			@RequestParam(value = "cursor", required = false) String cursor, 
 			@RequestParam(value = "locale", required = false) String locale, 
 			HttpServletRequest request) {
-		User user = getUser(request);
+		User user = WebUtil.getUser(request);
 		log.debug("User {} get delta.", user.toString());
 		
 		DeltaParams params = new DeltaParams();
@@ -335,22 +338,22 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "id", required = false) String id, 
 			@RequestParam(value = "name", required = false) String name, 
 			HttpServletRequest request) {
-		User user = getUser(request);
-		String parentPath = urlDecode(folder);
+		User user = WebUtil.getUser(request);
+		String parentPath = decodeUrl(folder);
 		
 		FileOperationResponse resp = null;
 		if ("0".equals(id)) {
 			// create folder
-			String folderPath = FileUtil.getFilePath(parentPath, name);
-			log.info("User {} create folder {}: }", new Object[]{user.toString(), space, folderPath});
+			String folderPath = FileUtil.getPath(parentPath, name);
+			log.info("User {} create folder {}:{}", user.toString(), space, folderPath);
 			
 			CreateParams params = new CreateParams(user, space, folderPath);
 			resp = getService().createFolder(params);
 		} else {
 			// rename
-			String srcPath = urlDecode(id);
-			String destPath = FileUtil.getFilePath(parentPath, name);
-			log.info("User {} rename {}:{} to {}", new Object[]{user.toString(), space, srcPath, destPath});
+			String srcPath = decodeUrl(id);
+			String destPath = FileUtil.getPath(parentPath, name);
+			log.info("User {} rename {}:{} to {}", user.toString(), space, srcPath, destPath);
 			
 			MoveParams params = new MoveParams(user, space, new String[]{srcPath}, new String[]{destPath});
 			List<FileOperationResponse> resps = getService().move(params);
@@ -367,9 +370,9 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "space", required = false) String space, 
 			@RequestParam(value = "files[]", required = false) String[] files, 
 			HttpServletRequest request) {
-		User user = getUser(request);
-		String[] filePaths = urlDecode(files);
-		log.info("User {} delete {}:{}", new Object[]{user.toString(), space, filePaths});
+		User user = WebUtil.getUser(request);
+		String[] filePaths = decodeUrl(files);
+		log.info("User {} delete {}:{}", user.toString(), space, filePaths);
 		
 		DeleteParams params = new DeleteParams(user, space, filePaths);
 		List<FileOperationResponse> resps = getService().delete(params);
@@ -383,16 +386,16 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "srcFiles[]", required = false) String[] srcFiles, 
 			@RequestParam(value = "destFolder", required = false) String destFolder, 
 			HttpServletRequest request) {
-		User user = getUser(request);
-		String[] srcFilePaths = urlDecode(srcFiles);
-		String destFolderPath = urlDecode(destFolder);
-		log.info("User {} move {}:{} to {}", new Object[]{user.toString(), space, srcFilePaths, destFolderPath});
+		User user = WebUtil.getUser(request);
+		String[] srcFilePaths = decodeUrl(srcFiles);
+		String destFolderPath = decodeUrl(destFolder);
+		log.info("User {} move {}:{} to {}", user.toString(), space, srcFilePaths, destFolderPath);
 		
 		int len = srcFilePaths.length;
 		String[] destFilePaths = new String[len];
 		for (int i = 0; i < len; i++) {
 			String srcFileName = FileUtil.getNameFromPath(srcFilePaths[i]);
-			String destPath = FileUtil.getFilePath(destFolderPath, srcFileName);
+			String destPath = FileUtil.getPath(destFolderPath, srcFileName);
 			destFilePaths[i] = destPath;
 		}
 		
@@ -408,16 +411,16 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "srcFiles[]", required = false) String[] srcFiles, 
 			@RequestParam(value = "destFolder", required = false) String destFolder, 
 			HttpServletRequest request) {
-		User user = getUser(request);
-		String[] srcFilePaths = urlDecode(srcFiles);
-		String destFolderPath = urlDecode(destFolder);
-		log.info("User {} copy {}:{} to {}", new Object[]{user.toString(), space, srcFilePaths, destFolderPath});
+		User user = WebUtil.getUser(request);
+		String[] srcFilePaths = decodeUrl(srcFiles);
+		String destFolderPath = decodeUrl(destFolder);
+		log.info("User {} copy {}:{} to {}", user.toString(), space, srcFilePaths, destFolderPath);
 		
 		int len = srcFilePaths.length;
 		String[] destFilePaths = new String[len];
 		for (int i = 0; i < len; i++) {
 			String srcFileName = FileUtil.getNameFromPath(srcFilePaths[i]);
-			String destPath = FileUtil.getFilePath(destFolderPath, srcFileName);
+			String destPath = FileUtil.getPath(destFolderPath, srcFileName);
 			destFilePaths[i] = destPath;
 		}
 		
@@ -430,9 +433,9 @@ public abstract class AbstractFileController extends BaseController {
 	public String getRevisions( 
 			@PathVariable String space, 
 			HttpServletRequest request) {
-		User user = getUser(request);
+		User user = WebUtil.getUser(request);
 		String path = getRestOfPath(request, getServicePathLength() + 11 + space.length()); // 8 + 10 + (1 + space.length)
-		log.debug("User {} get revisions of {}:{}", new Object[]{user.toString(), space, path});
+		log.debug("User {} get revisions of {}:{}", user.toString(), space, path);
 		
 		if (StringUtils.isBlank(path) || StringUtils.isBlank(space)) {
 			return error(request, "metadata", "No valid file is provided to get its revisions!");
@@ -444,7 +447,7 @@ public abstract class AbstractFileController extends BaseController {
 		request.setAttribute("space", space);
 		request.setAttribute("file", path);
 		request.setAttribute("entries", entries);
-		return "revisions";
+		return "files/revisions";
 	}
 	
 	@RequestMapping(value="/restore", method = RequestMethod.POST)
@@ -454,9 +457,9 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "file", required = false) String file,
 			@RequestParam(value = "rev", required = false) String rev, 
 			HttpServletRequest request) {
-		User user = getUser(request);
-		String path = urlDecode(file);
-		log.info("User {} want to restore {}:{} version {}", new Object[]{user.toString(), space, path, rev});
+		User user = WebUtil.getUser(request);
+		String path = decodeUrl(file);
+		log.info("User {} want to restore {}:{} version {}", user.toString(), space, path, rev);
 		
 		if (StringUtils.isBlank(rev)) {
 			throw new ErrorException(Error.badRequest("Can not find the restore vision of the file " + path));
@@ -474,9 +477,9 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "space", required = false) String space, 
 			@RequestParam(value = "file", required = false) String file, 
 			HttpServletRequest request) {
-		User user = getUser(request);
-		String path = urlDecode(file);
-		log.info("User {} share link of {}:{}", new Object[]{user.toString(), space, path});
+		User user = WebUtil.getUser(request);
+		String path = decodeUrl(file);
+		log.info("User {} share link of {}:{}", user.toString(), space, path);
 		
 		LinkParams params = new LinkParams(user, space, path);
 		params.setShortUrl(false);
@@ -491,9 +494,9 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "folder", required = false) String folder, 
 			@RequestParam(value = "query", required = false) String query, 
 			HttpServletRequest request) {
-		User user = getUser(request);
-		String path = urlDecode(folder);
-		log.debug("User {} search {} in {}:{}", new Object[]{user.toString(), query, space, path});
+		User user = WebUtil.getUser(request);
+		String path = decodeUrl(folder);
+		log.debug("User {} search {} in {}:{}", user.toString(), query, space, path);
 		
 		SearchParams params = new SearchParams(user, space, path);
 		params.setQuery(query);
@@ -502,7 +505,7 @@ public abstract class AbstractFileController extends BaseController {
 		if (entries != null) {
 			sortByFolder(entries);
 		} else {
-			//* just return empty list to jqGrid
+			//* just return empty list
 			entries = new ArrayList<MetadataEntry>();
 		}
 		
@@ -552,7 +555,7 @@ public abstract class AbstractFileController extends BaseController {
 					if ("space".equals(fieldName)) {
 						space = value;
 					} else if ("folder".equals(fieldName)) {
-						folderPath = urlDecode(value);
+						folderPath = decodeUrl(value);
 					} else if ("fileSize".equals(fieldName)) {
 						if (value != null && !"".equals(value)) {
 							fileSize = Long.parseLong(value);
@@ -568,12 +571,12 @@ public abstract class AbstractFileController extends BaseController {
 			}
 		} catch (ErrorException e) {
 			Error error = e.getError();
-			log.warn("Got error when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), error});
+			log.warn("Got error when handling request {} from {}: {}", request.getRequestURI(), WebUtil.getUserAddress(request), error);
 			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle());
 			uploadResps.add(resp);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
-			log.error("Got exception when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage()});
+			log.error("Got exception when handling request {} from {}: {}", request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage());
 			Error error = Error.internalServerError(e.getMessage());
 			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle());
 			uploadResps.add(resp);
@@ -613,7 +616,7 @@ public abstract class AbstractFileController extends BaseController {
 					if ("space".equals(fieldName)) {
 						space = value;
 					} else if ("folder".equals(fieldName)) {
-						folderPath = urlDecode(value);
+						folderPath = decodeUrl(value);
 					}
 				} else {
 					InputStream content = item.getInputStream();
@@ -627,12 +630,12 @@ public abstract class AbstractFileController extends BaseController {
 			}
 		} catch (ErrorException e) {
 			Error error = e.getError();
-			log.warn("Got error when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), error});
+			log.warn("Got error when handling request {} from {}: {}", request.getRequestURI(), WebUtil.getUserAddress(request), error);
 			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle());
 			uploadResps.add(resp);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
-			log.error("Got exception when handling request {} from {}: {}", new Object[]{request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage()});
+			log.error("Got exception when handling request {} from {}: {}", request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage());
 			Error error = Error.internalServerError(e.getMessage());
 			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle());
 			uploadResps.add(resp);
@@ -642,9 +645,9 @@ public abstract class AbstractFileController extends BaseController {
 	
 	protected long saveFile(HttpServletRequest request, String space, String folderPath, String fileName,
 			InputStream content, long contentLength) {
-		User user = getUser(request);
-		String filePath = FileUtil.getFilePath(folderPath, fileName);
-		log.info("User {} save {}: {} size {}", new Object[] {user.toString(), space, filePath, contentLength});
+		User user = WebUtil.getUser(request);
+		String filePath = FileUtil.getPath(folderPath, fileName);
+		log.info("User {} save {}:{} size {}", user.toString(), space, filePath, contentLength);
 
 		UploadParams params = new UploadParams(user, space, filePath);
 		params.setContent(content);

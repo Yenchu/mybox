@@ -58,7 +58,7 @@ var fileUpload = (function(options) {
 	}
 	
 	function uploadStart(file) {
-		var uploadFile = '<div id="' + file.id + '" class="file row-fluid" style="position:relative">' + 
+		var uploadProgress = '<div id="' + file.id + '" class="file row-fluid" style="position:relative">' + 
 			'<div class="span12 single-progress alert-info" style="width:0%">' +
 			'<div class="row-fluid" style="position:absolute; padding-top:5px;">' +
 			'<div class="span6 name">' + file.name + '</div>' +
@@ -66,8 +66,8 @@ var fileUpload = (function(options) {
 			'<div class="span4 cancel"><button type="button" class="btn btn-warning btn-mini">Cancel</button></div>' +
 			'</div></div></div>';
 	
-		var $uploadFile = $(uploadFile);
-		$('#fileupload-files').append($uploadFile);
+		var $uploadProgress = $(uploadProgress);
+		$('#upload-progresses').append($uploadProgress);
 
 		this.customSettings.totalFileSize += file.size;
 		
@@ -78,11 +78,11 @@ var fileUpload = (function(options) {
 	
 	function uploadProgress(file, bytesLoaded, bytesTotal) {
 		var progress = Math.ceil((bytesLoaded / bytesTotal) * 100);
-		var $uploadFile = $('#' + file.id);
+		var $uploadProgress = $('#' + file.id);
 		if (progress === 100) {
-			$uploadFile.find('.cancel button').attr('disabled', true);
+			$uploadProgress.find('.cancel button').attr('disabled', true);
 		}
-		$uploadFile.find('.single-progress').css('width', progress + '%');
+		$uploadProgress.find('.single-progress').css('width', progress + '%');
 
 		this.customSettings.uploadedFileSizes[file.id] = bytesLoaded;
 		uploadProgressAll(file, this.customSettings);
@@ -98,30 +98,30 @@ var fileUpload = (function(options) {
 
 		var totalFileSize = customSettings.totalFileSize;
 		var uploadInfo = renderExtendedProgress(file, uploadedSum, totalFileSize);
-		$('#fileupload-progress').html(uploadInfo);
+		var $totalUploadProgress = $('#total-upload-progress').html(uploadInfo);
 		
 		var progress = Math.ceil((uploadedSum / totalFileSize) * 100);
 		if (progress === 100) {
 			$('#cancel-upload-btn').attr('disabled', true);
 		}
-		$('#total-progress').css('width', progress + '%');
+		$totalUploadProgress.find('.total-progress').css('width', progress + '%');
 	}
 	
 	function uploadSuccess(file, serverData) {
 		var resps = $.parseJSON(serverData);
 		var resp = resps[0];
 		
-		var $uploadFile = $('#' + file.id);
+		var $uploadProgress = $('#' + file.id);
 		var msg;
 		if (!resp.error) {
-			$uploadFile.find('.single-progress').removeClass('alert-info').addClass('alert-success').css('width', '100%');
-			$uploadFile.find('.size').html(formatBytes(resp.size));
+			$uploadProgress.find('.single-progress').removeClass('alert-info').addClass('alert-success').css('width', '100%');
+			$uploadProgress.find('.size').html(formatBytes(resp.size));
 			msg = '<span class="label label-success">Success</span>';
 		} else {
-			$uploadFile.find('.single-progress').removeClass('alert-info').addClass('alert-error')
+			$uploadProgress.find('.single-progress').removeClass('alert-info').addClass('alert-error');
 			msg = '<span class="label label-important">Failed: ' + resp.error + '</span>';
 		}
-		$uploadFile.find('.cancel').html(msg);
+		$uploadProgress.find('.cancel').html(msg);
 	}
 	
 	function uploadError(file, errorCode, message) {
@@ -134,16 +134,16 @@ var fileUpload = (function(options) {
 				log("Upload error code=" + errorCode + ", filename=" + file.name + ", filesize=" + file.size + ", message=" + message);
 		}
 		
-		var $uploadFile = $('#' + file.id);
+		var $uploadProgress = $('#' + file.id);
 		var msg;
 		if (errorCode === SWFUpload.UPLOAD_ERROR.FILE_CANCELLED) {
-			$uploadFile.find('.single-progress').removeClass('alert-info').addClass('alert-warning')
+			$uploadProgress.find('.single-progress').removeClass('alert-info').addClass('alert-warning');
 			msg = '<span class="label label-warning">Canceled</span>';
 		} else {
-			$uploadFile.find('.single-progress').removeClass('alert-info').addClass('alert-error')
+			$uploadProgress.find('.single-progress').removeClass('alert-info').addClass('alert-error');
 			msg = '<span class="label label-important">Failed</span>';
 		}
-		$uploadFile.find('.cancel').html(msg);
+		$uploadProgress.find('.cancel').html(msg);
 
 		this.customSettings.uploadedFileSizes[file.id] = file.size;
 		uploadProgressAll(file, this.customSettings);
@@ -151,7 +151,7 @@ var fileUpload = (function(options) {
 	
 	function fileDialogComplete(numFilesSelected, numFilesQueued) {
 		if (numFilesSelected > 0) {
-			$('#fileupload-progress').show();
+			$('#total-upload-progress').show();
 			var $cancelBtn = $('#cancel-upload-btn');
 			$cancelBtn.attr('disabled', false);
 			$cancelBtn.show();
@@ -161,9 +161,7 @@ var fileUpload = (function(options) {
 	
 	function uploadComplete(file) {
 		if (this.getStats().files_queued === 0) {
-			var $fileuploadProgress = $('#fileupload-progress');
-			$fileuploadProgress.hide();
-			$fileuploadProgress.empty();
+			$('#total-upload-progress').hide().empty();
 			$('#cancel-upload-btn').hide();
 			this.customSettings.totalFileSize = 0;
 			this.customSettings.uploadedFileSizes = {};
@@ -171,19 +169,19 @@ var fileUpload = (function(options) {
 	}
 	
 	function setCancelUpload(swfu) {
-		$('#fileupload-files').on('click', '.cancel button', function(e) {
-			var $uploadFile = $(this).parents('.file');
-			var fileId = $uploadFile.attr('id');
+		$('#upload-progresses').on('click', '.cancel button', function(e) {
+			var $uploadProgress = $(this).parents('.file');
+			var fileId = $uploadProgress.attr('id');
 			swfu.cancelUpload(fileId, true);
 		});
 		$('#cancel-upload-btn').click(function() {
-			$('#fileupload-files').find('.cancel button').click();
+			$('#upload-progresses').find('.cancel button').click();
 		});
 	}
 	
 	function setCloseUpload() {
 		$('#close-upload-btn').click(function() {
-			$('#fileupload-files').find('.file').each(function(index) {
+			$('#upload-progresses').find('.file').each(function(index) {
 				// don't delete records which are still uploading
 				var $target = $(this).find('.cancel button');
 				if ($target.length <= 0) {
@@ -197,7 +195,7 @@ var fileUpload = (function(options) {
 		var timeRemaining = file.timeRemaining * byteTotal / bytesLoaded;
 		var percentUploaded = 100 * bytesLoaded / byteTotal; //file.percentUploaded
 		return '<div class="row-fluid" style="position:relative">' +
-			'<div id="total-progress" class="span12 alert-info" style="width:0%">' + 
+			'<div class="span12 total-progress alert-info" style="width:0%">' + 
 			'<div class="row-fluid" style="position:absolute; padding-top:5px;">' + 
 			'<div class="span3">' + SWFUpload.speed.formatBPS(file.currentSpeed) + '</div>' +
 			'<div class="span3">' + SWFUpload.speed.formatTime(timeRemaining) + '</div>' +

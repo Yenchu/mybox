@@ -19,10 +19,10 @@ public class JsonConverter {
 		return toJson(entity, false);
 	}
 
-	public static <T> String toJson(T entity, boolean jsonHasRoot) {
+	public static <T> String toJson(T entity, boolean hasJsonRoot) {
 		String json;
 		try {
-			json = JSON.toJson(entity, jsonHasRoot);
+			json = JSON.toJson(entity, hasJsonRoot);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			throw new ErrorException(Error.formatError(e.getMessage()));
@@ -56,14 +56,14 @@ public class JsonConverter {
 		return fromJson(json, clazz, false);
 	}
 	
-	public static <T> T fromJson(String json, Class<T> clazz, boolean jsonHasRoot) {
+	public static <T> T fromJson(String json, Class<T> clazz, boolean hasJsonRoot) {
 		if (json == null || json.equals("")) {
 			return null;
 		}
 		
 		T entity = null;
 		try {
-			entity = JSON.fromJson(json, clazz, jsonHasRoot);
+			entity = JSON.fromJson(json, clazz, hasJsonRoot);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			throw new ErrorException(Error.formatError(e.getMessage()));

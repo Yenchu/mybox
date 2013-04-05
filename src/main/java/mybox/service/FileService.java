@@ -7,10 +7,14 @@ import mybox.model.ChunkedUploadParams;
 import mybox.model.CopyParams;
 import mybox.model.CreateParams;
 import mybox.model.DeleteParams;
+import mybox.model.DeltaPage;
 import mybox.model.DeltaParams;
 import mybox.model.EntryParams;
+import mybox.model.FileEntry;
+import mybox.model.Link;
 import mybox.model.LinkParams;
 import mybox.model.LoginParams;
+import mybox.model.MetadataEntry;
 import mybox.model.MetadataParams;
 import mybox.model.MoveParams;
 import mybox.model.Params;
@@ -21,10 +25,6 @@ import mybox.model.Space;
 import mybox.model.ThumbnailParams;
 import mybox.model.UploadParams;
 import mybox.model.User;
-import mybox.model.dropbox.DeltaPage;
-import mybox.model.dropbox.FileEntry;
-import mybox.model.dropbox.Link;
-import mybox.model.dropbox.MetadataEntry;
 import mybox.to.FileOperationResponse;
 
 public interface FileService {
@@ -65,9 +65,9 @@ public interface FileService {
 
 	public FileOperationResponse createFolder(CreateParams params);
 	
-	public List<FileOperationResponse> delete(DeleteParams delParams);
+	public List<FileOperationResponse> delete(DeleteParams params);
 
-	public List<FileOperationResponse> move(MoveParams moveParams);
+	public List<FileOperationResponse> move(MoveParams params);
 	
 	public List<FileOperationResponse> copy(CopyParams params);
 	

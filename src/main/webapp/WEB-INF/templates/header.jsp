@@ -8,11 +8,11 @@
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			</a>
-			<a class="brand" href="#">MyBox</a>
+			<a class="brand" href="#">File Cruiser</a>
 			<div class="nav-collapse collapse">
 				<ul class="nav">
 					<li id="topnav-home"><a href="${service}/">Home</a></li>
-					<li id="topnav-groups"><a href="${service}/website/${space.id}/html/index.html">Pages</a></li>
+					<!-- <li id="topnav-groups"><a href="${service}/website/${space.id}/html/index.html">Pages</a></li> -->
 					<li id="topnav-event"><a href="${contextPath}/users">Events</a></li>
 					<li id="topnav-apps"><a href="${contextPath}/users">Apps</a></li>
 					<li id="topnav-settings"><a href="${contextPath}/users">Settings</a></li>

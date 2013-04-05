@@ -41,7 +41,7 @@ public class FileUtil {
 		return parent;
 	}
 
-	public static String getFilePath(String folderPath, String fileName) {
+	public static String getPath(String folderPath, String fileName) {
 		String filePath = null;
 		if (!folderPath.equals("/")) {
 			filePath = folderPath + "/" + fileName;

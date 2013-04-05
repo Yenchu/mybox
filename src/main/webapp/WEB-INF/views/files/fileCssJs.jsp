@@ -1,12 +1,11 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<link href="${asset}/jqgrid/css/ui.jqgrid.css" rel="stylesheet">
 <link href="${asset}/dynatree/skin/ui.dynatree.css" rel="stylesheet">
 <link href="${asset}/mytable/mytable.css" rel="stylesheet">
 <style>
-/* adjust modal icon */
-.modal-header i {
-  padding-top: 7px;
+/* Custom table head */
+thead {
+  background-color: #f5f5f5;
 }
 /* Custom upload alert style */
 .alert-warning {
@@ -43,9 +42,7 @@
   margin: 1px 0 0 0;
 }
 </style>
-<script src="${asset}/jqgrid/js/i18n/grid.locale-en.js"></script>
-<script src="${asset}/jqgrid/js/jquery.jqGrid.min.js"></script>
-<script src="${asset}/js/jquery.contextmenu-ui.js"></script>
-<script src="${asset}/dynatree/jquery.dynatree-1.2.1.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/swfobject/2.2/swfobject.js"></script>
+<script src="${asset}/dynatree/jquery.dynatree.min.js"></script>
+<script src="${asset}/js/bootstrap-contextmenu.js"></script>
 <script src="${asset}/mytable/mytable.js"></script>

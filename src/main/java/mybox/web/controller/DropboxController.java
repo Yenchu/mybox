@@ -10,12 +10,13 @@ import mybox.exception.Error;
 import mybox.exception.ErrorException;
 import mybox.model.ChunkedUploadParams;
 import mybox.model.EntryParams;
+import mybox.model.FileEntry;
+import mybox.model.MetadataEntry;
 import mybox.model.UploadParams;
 import mybox.model.User;
-import mybox.model.dropbox.FileEntry;
-import mybox.model.dropbox.MetadataEntry;
 import mybox.service.DropboxService;
 import mybox.util.FileUtil;
+import mybox.util.WebUtil;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -49,9 +50,9 @@ public class DropboxController extends AbstractFileController {
 	
 	@Override
 	protected long saveFile(HttpServletRequest request, String space, String folderPath, String fileName, InputStream content, long contentLength) {
-		User user = getUser(request);
-		String filePath = FileUtil.getFilePath(folderPath, fileName);
-		log.info("User {} save {}{} size {}", new Object[] {user.toString(), space, filePath, contentLength});
+		User user = WebUtil.getUser(request);
+		String filePath = FileUtil.getPath(folderPath, fileName);
+		log.info("User {} save {}{} size {}", user.toString(), space, filePath, contentLength);
 
 		MetadataEntry entry = null;
 		if (contentLength >= UPLOAD_FILE_SIZE_LIMIT) {
@@ -78,12 +79,12 @@ public class DropboxController extends AbstractFileController {
 	public void browse(
 			@PathVariable String space, 
 			HttpServletRequest request, HttpServletResponse response) {
-		User user = getUser(request);
+		User user = WebUtil.getUser(request);
 		String path = getRestOfPath(request, getServicePathLength() + 9 + space.length());
 		if (path == null || "".equals(path)) {
 			throw new ErrorException(Error.badRequest("Browse file request from " + user.toString() + " doesn't have file path!"));
 		}
-		log.info("User {} browse {}:{}", new Object[]{user.toString(), space, path});
+		log.info("User {} browse {}:{}", user.toString(), space, path);
 		
 		EntryParams params = new EntryParams(user, space, path);
 		FileEntry entry = getService().download(params);

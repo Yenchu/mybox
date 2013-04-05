@@ -9,6 +9,7 @@ import mybox.model.mondo.Group;
 import mybox.model.mondo.MondoUser;
 import mybox.service.MondoService;
 import mybox.to.Page;
+import mybox.util.WebUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,8 +38,8 @@ public class MondoController extends AbstractFileController {
 	@ResponseBody
 	public Page<Group> pageGroups(HttpServletRequest request) {
 		// sidx is from jgGrid
-		User user = getUser(request);
-		log.debug("User {} page groups", new Object[]{user.toString()});
+		User user = WebUtil.getUser(request);
+		log.debug("User {} page groups", user.toString());
 
 		List<Group> groups = getService().getGroups((MondoUser) user);
 		Page<Group> page = new Page<Group>(groups);
@@ -48,8 +49,8 @@ public class MondoController extends AbstractFileController {
 	@RequestMapping(value = "/groups", method = RequestMethod.POST)
 	@ResponseBody
 	public List<Group> listGroups(HttpServletRequest request) {
-		User user = getUser(request);
-		log.debug("User {} list groups", new Object[]{user.toString()});
+		User user = WebUtil.getUser(request);
+		log.debug("User {} list groups", user.toString());
 		List<Group> groups = getService().getGroups((MondoUser) user);
 		return groups;
 	}

@@ -2,21 +2,21 @@ package mybox.service;
 
 import java.util.List;
 
-import mybox.BaseUnitTest;
+import mybox.SpringUnitTest;
 import mybox.backend.dropbox.DropboxUtil;
 import mybox.model.CreateParams;
+import mybox.model.DeltaPage;
 import mybox.model.DeltaParams;
 import mybox.model.EntryParams;
+import mybox.model.Link;
 import mybox.model.LinkParams;
+import mybox.model.MetadataEntry;
 import mybox.model.MetadataParams;
 import mybox.model.PathParams;
 import mybox.model.RevisionParams;
 import mybox.model.SearchParams;
 import mybox.model.User;
-import mybox.model.dropbox.DeltaPage;
 import mybox.model.dropbox.DropboxUser;
-import mybox.model.dropbox.Link;
-import mybox.model.dropbox.MetadataEntry;
 import mybox.service.DropboxService;
 import mybox.to.FileOperationResponse;
 
@@ -25,8 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-
-public class DropboxServiceTest extends BaseUnitTest {
+public class DropboxServiceTest extends SpringUnitTest {
 
 	private static final Logger log = LoggerFactory.getLogger(DropboxServiceTest.class);
 	

@@ -24,10 +24,15 @@ import mybox.model.ChunkedUploadParams;
 import mybox.model.CopyParams;
 import mybox.model.CreateParams;
 import mybox.model.DeleteParams;
+import mybox.model.DeltaPage;
 import mybox.model.DeltaParams;
 import mybox.model.EntryParams;
+import mybox.model.EntryUtil;
+import mybox.model.FileEntry;
+import mybox.model.Link;
 import mybox.model.LinkParams;
 import mybox.model.LoginParams;
+import mybox.model.MetadataEntry;
 import mybox.model.MetadataParams;
 import mybox.model.MoveParams;
 import mybox.model.Params;
@@ -38,10 +43,6 @@ import mybox.model.Space;
 import mybox.model.ThumbnailParams;
 import mybox.model.UploadParams;
 import mybox.model.User;
-import mybox.model.dropbox.DeltaPage;
-import mybox.model.dropbox.FileEntry;
-import mybox.model.dropbox.Link;
-import mybox.model.dropbox.MetadataEntry;
 import mybox.to.FileOperationResponse;
 import mybox.to.Page;
 
@@ -51,7 +52,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
-public class DiskServiceImpl extends AbstractFileService implements DiskService {
+public class DiskServiceImpl implements DiskService {
 	
 	private static final Logger log = LoggerFactory.getLogger(DiskServiceImpl.class);
 
@@ -59,13 +60,13 @@ public class DiskServiceImpl extends AbstractFileService implements DiskService 
 
 	public User auth(LoginParams params) {
 		if (!params.getPassword().equals("cloud")) {
-			log.info("{} from {} login failed!", params.getUsername(), params.getAddress());
+			log.info("{} from {} login failed!", params.getUsername(), params.getIp());
 			return null;
 		}
 
 		User user = new User();
 		user.setName(params.getUsername());
-		user.setAddress(params.getAddress());
+		user.setIp(params.getIp());
 		return user;
 	}
 	
@@ -121,7 +122,7 @@ public class DiskServiceImpl extends AbstractFileService implements DiskService 
 				}
 			}
 			folderEntry.setContents(entries);
-			customEntries(space, folderEntry);
+			EntryUtil.customEntries(space, folderEntry);
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
@@ -153,11 +154,10 @@ public class DiskServiceImpl extends AbstractFileService implements DiskService 
 			}
 			
 			i++;
-			customEntries(entries);
+			EntryUtil.customEntries(entries);
 			page = new Page<MetadataEntry>(entries);
 			page.setPage(pageable.getPageNumber());
 			page.setPageSize(pageable.getPageSize());
-			page.setTotalPages((i / pageable.getPageSize()) + 1);
 			page.setTotalRecords(i);
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
@@ -200,7 +200,7 @@ public class DiskServiceImpl extends AbstractFileService implements DiskService 
 		MetadataEntry entry = null;
 		try {
 			entry = getMetadata(Paths.get(path), false);
-			customEntry(entry);
+			EntryUtil.customEntry(entry);
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
