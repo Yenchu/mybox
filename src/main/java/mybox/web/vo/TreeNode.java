@@ -1,4 +1,4 @@
-package mybox.to;
+package mybox.web.vo;
 
 import java.util.ArrayList;
 import java.util.List;

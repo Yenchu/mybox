@@ -38,19 +38,11 @@
 
 	<definition name="login" extends="simpleLayout">
 		<put-attribute name="content" value="/WEB-INF/views/login/login.jsp" cascade="true" />
-		<put-list-attribute name="cssjs">
-			<add-attribute value="/WEB-INF/views/login/loginCssJs.jsp" />
+		<put-list-attribute name="csses">
+			<add-attribute value="/WEB-INF/views/login/loginCss.jsp" />
 		</put-list-attribute>
-	</definition>
-	
-	<definition name="account" extends="contentOnlyLayout">
-		<put-attribute name="content" value="/WEB-INF/views/account.jsp" cascade="true" />
-	</definition>
-	
-	<definition name="groups" extends="contentOnlyLayout">
-		<put-attribute name="content" value="/WEB-INF/views/groups/groups.jsp" cascade="true" />
-		<put-list-attribute name="cssjs">
-			<add-attribute value="/WEB-INF/views/groups/groupCssJs.jsp" />
+		<put-list-attribute name="jses">
+			<add-attribute value="/WEB-INF/views/login/loginJs.jsp" />
 		</put-list-attribute>
 	</definition>
 	
@@ -60,16 +52,15 @@
 
 	<definition name="fileLayout" extends="leftNavContentLayout">
 		<put-attribute name="leftNav" value="/WEB-INF/views/files/fileLeftNav.jsp" cascade="true" />
-		<put-list-attribute name="cssjs">
-			<add-attribute value="/WEB-INF/views/files/fileCssJs.jsp" />
+		<put-list-attribute name="csses">
+			<add-attribute value="/WEB-INF/views/files/fileCss.jsp" />
+		</put-list-attribute>
+		<put-list-attribute name="jses">
+			<add-attribute value="/WEB-INF/views/files/fileJs.jsp" />
 		</put-list-attribute>
 	</definition>
 
 	<definition name="files" extends="fileLayout">
 		<put-attribute name="content" value="/WEB-INF/views/files/files.jsp" cascade="true" />
-	</definition>
-	
-	<definition name="groupFiles" extends="files">
-		<put-attribute name="leftNav" value="/WEB-INF/views/files/groupLeftNav.jsp" cascade="true" />
 	</definition>
 </tiles-definitions>

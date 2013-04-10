@@ -8,13 +8,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import mybox.exception.Error;
 import mybox.exception.ErrorException;
-import mybox.model.ChunkedUploadParams;
-import mybox.model.EntryParams;
 import mybox.model.FileEntry;
 import mybox.model.MetadataEntry;
-import mybox.model.UploadParams;
 import mybox.model.User;
 import mybox.service.DropboxService;
+import mybox.to.ChunkedUploadParams;
+import mybox.to.EntryParams;
+import mybox.to.UploadParams;
 import mybox.util.FileUtil;
 import mybox.util.WebUtil;
 

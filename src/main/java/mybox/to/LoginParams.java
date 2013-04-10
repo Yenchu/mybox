@@ -1,4 +1,4 @@
-package mybox.model;
+package mybox.to;
 
 public class LoginParams {
 	

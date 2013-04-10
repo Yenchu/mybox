@@ -4,20 +4,15 @@
 <script src="${asset}/jquery-file-upload/js/jquery.fileupload.js"></script>
 <!--[if gte IE 8]><script src="${asset}/jquery-file-upload/js/cors/jquery.xdr-transport.js"></script><![endif]-->
 <script type="text/javascript">
-var fileUpload = (function(options) {
+var FileUpload = (function() {
 	
-	function init() {
+	var options = null;
+	
+	function init(uploadOptions) {
+		options = uploadOptions;
+		
 		$('#upload-placeholder').fileupload({
 			url: options.url,
-			/*maxChunkSize: 4 * 1024 * 1024,
-			error: function (jqXHR, textStatus, errorThrown) {
-				// Called for each failed chunk upload
-				log("upload error: " + textStatus);
-			},
-			success: function (data, textStatus, jqXHR) {
-				// Called for each successful chunk upload
-				log("upload success: " + data);
-			},*/
 			fileInput: ('#upload-modal input:file'),
 			dropZone: $('#file-table'),
 			drop: function(e, data) {
@@ -47,7 +42,7 @@ var fileUpload = (function(options) {
 			},
 			submit: function(e, data) {
 				var file = data.files[0];
-				data.formData = {space:options.space, folder:currentFolder, fileSize:file.size};
+				data.formData = {space:options.spaceId, folder:options.getCurrentFolder(), fileSize:file.size};
 				return true;
 			},
 			progress: function (e, data) {
@@ -208,17 +203,17 @@ var fileUpload = (function(options) {
 		return (floatValue * 100).toFixed(2) + ' %';
 	}
 	
-	return {
-		init: init
+	return function(options) {
+		init(options);
 	};
-})(uploadOptions);
+})();
 
 function openUploadUI() {
 	$('#upload-modal').modal('show');
 }
 
 $(function() {
-	uploadOptions.dropEventHandler = openUploadUI;
-	fileUpload.init();
+	uploadJsOptions.dropEventHandler = openUploadUI;
+	var fileUpload = FileUpload(uploadJsOptions);
 });
 </script>

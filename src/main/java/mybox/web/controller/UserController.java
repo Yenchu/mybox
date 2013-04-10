@@ -1,48 +1,36 @@
 package mybox.web.controller;
 
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 
-import mybox.model.User;
-import mybox.model.dropbox.Account;
+import mybox.model.filecruiser.FileCruiserUser;
+import mybox.model.keystone.User;
+import mybox.service.UserService;
+import mybox.to.Page;
 import mybox.util.WebUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 public class UserController extends BaseController {
 
 	private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
+	@Autowired
+	private UserService userService;
+	
 	@RequestMapping(value="/users")
-	public String getUsers() {
-		return "users";
-	}
-	
-	@RequestMapping(value="/account/profile")
-	public String getProfile(HttpServletRequest request) {
-		User user = WebUtil.getUser(request);
-		Account account = new Account();
-		account.setDisplayName(user.getName());
-		account.setQuota(1000);
-		account.setRole(new int[]{1});
-		request.setAttribute("account", account);
-		return "account";
-	}
-	
-	@RequestMapping(value="/account/profile", method = RequestMethod.POST)
-	public String setProfile(@ModelAttribute("account") Account account, HttpServletRequest request) {
-		WebUtil.logParameters(request);
-		log.debug("account name={}, quota={}, role={}", account.getDisplayName(), account.getQuota(), account.getRole());
-		return "account";
-	}
-	
-	@RequestMapping(value="/account/password")
-	public String changePassword() {
-		return "users";
+	@ResponseBody
+	public Page<User> getUsers(HttpServletRequest request) {
+		FileCruiserUser user = (FileCruiserUser) WebUtil.getUser(request);
+		log.debug("User {} get users.", user.toString());
+		List<User> users = userService.getUsers(user);
+		return new Page<User>(users);
 	}
 }

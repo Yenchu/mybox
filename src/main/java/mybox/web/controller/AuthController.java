@@ -23,7 +23,7 @@ public class AuthController extends BaseController {
 			HttpServletRequest request) {
 		if (StringUtils.isBlank(serviceType)) {
 			//* default service for test
-			serviceType = ServiceType.DROPBOX.value();
+			serviceType = ServiceType.FILECRUISER.value();
 		}
 		
 		String contextPath = request.getContextPath();

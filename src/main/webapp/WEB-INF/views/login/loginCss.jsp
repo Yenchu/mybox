@@ -18,4 +18,3 @@ body {
 	box-shadow: 0 1px 2px rgba(0,0,0,.05);
 }
 </style>
-<script src="${asset}/jquery-validation/jquery.validate.min.js"></script>

@@ -1,7 +1,12 @@
-package mybox.model;
+package mybox.util;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import mybox.to.CreateParams;
+import mybox.to.EntryParams;
+import mybox.to.MetadataParams;
+import mybox.to.UploadParams;
 
 public class ParamsUtil {
 

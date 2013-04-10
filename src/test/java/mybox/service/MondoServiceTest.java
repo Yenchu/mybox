@@ -3,17 +3,17 @@ package mybox.service;
 import java.util.List;
 
 import mybox.SpringUnitTest;
-import mybox.model.CreateParams;
-import mybox.model.LoginParams;
 import mybox.model.MetadataEntry;
-import mybox.model.MetadataParams;
-import mybox.model.Params;
-import mybox.model.PathParams;
 import mybox.model.Space;
 import mybox.model.mondo.Group;
 import mybox.model.mondo.MondoUser;
 import mybox.service.MondoService;
+import mybox.to.CreateParams;
 import mybox.to.FileOperationResponse;
+import mybox.to.LoginParams;
+import mybox.to.MetadataParams;
+import mybox.to.Params;
+import mybox.to.PathParams;
 
 import org.junit.Test;
 import org.slf4j.Logger;

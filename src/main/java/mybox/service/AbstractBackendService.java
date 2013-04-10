@@ -120,14 +120,12 @@ public class AbstractBackendService {
 	
 	protected String getAdminUrl(String resource, String... qryStr) {
 		String url = systemProp.getAdminUrl();
-		String version = systemProp.getVersion();
-		return getUrl(url, version, resource, qryStr);
+		return getUrl(url, resource, qryStr);
 	}
 	
 	protected String getUserUrl(String resource, String... qryStr) {
 		String url = systemProp.getUserUrl();
-		String version = systemProp.getVersion();
-		return getUrl(url, version, resource, qryStr);
+		return getUrl(url, resource, qryStr);
 	}
 	
 	protected String getFileUrl(String resource, String... qryStr) {

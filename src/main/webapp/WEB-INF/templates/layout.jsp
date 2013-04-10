@@ -16,15 +16,14 @@
 <!--[if lt IE 9]><script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
 <link rel="shortcut icon" href="${asset}/img/favicon.png">
 <link href="${asset}/css/main.css" rel="stylesheet">
+<tilesx:useAttribute id="csses" name="csses" classname="java.util.List" ignore="true" />
+<c:forEach var="css" items="${csses}">
+<tiles:insertAttribute value="${css}" flush="true" />
+</c:forEach>
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
-<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
 <!--[if IE]><script src="${asset}/js/Placeholders.min.js"></script><![endif]-->
-<tilesx:useAttribute id="cssjs" name="cssjs" classname="java.util.List" ignore="true" />
-<c:forEach var="cj" items="${cssjs}">
-<tiles:insertAttribute value="${cj}" flush="true" />
-</c:forEach>
-<script src="${asset}/js/main.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>
 </head>
 <body>
 <div id="wrap">
@@ -37,5 +36,10 @@
 <div id="footer">
 	<tiles:insertAttribute name="footer" />
 </div>
+<script src="${asset}/js/main.js"></script>
+<tilesx:useAttribute id="jses" name="jses" classname="java.util.List" ignore="true" />
+<c:forEach var="js" items="${jses}">
+<tiles:insertAttribute value="${js}" flush="true" />
+</c:forEach>
 </body>
 </html>

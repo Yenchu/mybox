@@ -2,8 +2,8 @@ package mybox.web.controller;
 
 import javax.servlet.http.HttpServletRequest;
 
-import mybox.to.Notice;
 import mybox.util.HttpUtil;
+import mybox.web.vo.Notice;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

@@ -1,8 +1,10 @@
-package mybox.model;
+package mybox.to;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import mybox.model.User;
 
 public class UploadParams extends PathParams {
 	

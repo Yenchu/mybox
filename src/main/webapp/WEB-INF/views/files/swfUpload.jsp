@@ -11,11 +11,13 @@
 <script type="text/javascript" src="${asset}/swfupload/plugins/swfupload.queue.js"></script>
 <script type="text/javascript" src="${asset}/swfupload/plugins/swfupload.speed.js"></script>
 <script type="text/javascript">
-var fileUpload = (function(options) {
+var FileUpload = (function(options) {
 	
-	var swfu;
+	var swfu, options = null;
 	
-	function init() {
+	function init(uploadOptions) {
+		options = uploadOptions;
+		
 		if (!swfu) {
 			// make swf object has equal size with 'add-file-btn'
 			var $addFileBtn = $('#add-file-btn');
@@ -71,8 +73,8 @@ var fileUpload = (function(options) {
 
 		this.customSettings.totalFileSize += file.size;
 		
-		this.addFileParam(file.id, 'space', options.space);
-		this.addFileParam(file.id, 'folder', currentFolder);
+		this.addFileParam(file.id, 'space', options.spaceId);
+		this.addFileParam(file.id, 'folder', options.getCurrentFolder());
 		this.addFileParam(file.id, 'fileSize', file.size);
 	}
 	
@@ -208,13 +210,13 @@ var fileUpload = (function(options) {
 		return SWFUpload.speed.formatBytes(bytes);
 	}
 	
-	return {
-		init: init
+	return function(options) {
+		init(options);
 	};
-})(uploadOptions);
+})();
 
 function openUploadUI() {
 	$('#upload-modal').modal('show');
-	fileUpload.init();
+	var fileUpload = FileUpload(uploadJsOptions);
 }
 </script>

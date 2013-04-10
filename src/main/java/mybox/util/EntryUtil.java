@@ -1,12 +1,14 @@
-package mybox.model;
+package mybox.util;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import mybox.json.JsonConverter;
+import mybox.model.FileEntry;
+import mybox.model.MetadataEntry;
+import mybox.model.Space;
 import mybox.rest.RestResponse;
-import mybox.util.HttpUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

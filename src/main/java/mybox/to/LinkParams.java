@@ -1,28 +1,30 @@
-package mybox.model;
+package mybox.to;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class EntryParams extends PathParams {
+import mybox.model.User;
+
+public class LinkParams extends PathParams {
 	
-	protected String rev;
-	
-	public EntryParams() {
+	private boolean shortUrl = true; //default
+
+	public LinkParams() {
 	}
 	
-	public EntryParams(String root, String path) {
+	public LinkParams(String root, String path) {
 		super(root, path);
 	}
 	
-	public EntryParams(User user, String root, String path) {
+	public LinkParams(User user, String root, String path) {
 		super(user, root, path);
 	}
 	
 	public List<String> getParamList() {
 		List<String> params = new ArrayList<String>();
-		if (rev != null && !"".equals(rev)) {
-			params.add("rev");
-			params.add(rev);
+		if (!shortUrl) {
+			params.add("short_url");
+			params.add("false");
 		}
 		if (locale != null && !"".equals(locale)) {
 			params.add("locale");
@@ -36,11 +38,11 @@ public class EntryParams extends PathParams {
 		return params.toArray(new String[params.size()]);
 	}
 
-	public String getRev() {
-		return rev;
+	public boolean isShortUrl() {
+		return shortUrl;
 	}
 
-	public void setRev(String rev) {
-		this.rev = rev;
+	public void setShortUrl(boolean shortUrl) {
+		this.shortUrl = shortUrl;
 	}
 }

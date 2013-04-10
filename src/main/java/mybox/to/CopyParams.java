@@ -1,4 +1,6 @@
-package mybox.model;
+package mybox.to;
+
+import mybox.model.User;
 
 public class CopyParams extends MoveParams {
 

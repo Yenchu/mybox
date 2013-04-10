@@ -1,14 +1,19 @@
 package mybox.web.controller;
 
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 
 import mybox.exception.Error;
 import mybox.exception.ErrorException;
-import mybox.model.LoginParams;
 import mybox.model.User;
+import mybox.model.filecruiser.SharedFile;
+import mybox.model.filecruiser.SharingFile;
 import mybox.service.FileCruiserService;
-import mybox.service.FileService;
 import mybox.to.AuthResponse;
+import mybox.to.LoginParams;
+import mybox.to.Params;
+import mybox.to.PathParams;
 import mybox.util.WebUtil;
 
 import org.slf4j.Logger;
@@ -53,9 +58,50 @@ public class FileCruiserController extends AbstractFileController {
 		authResp.setServiceUrl(serviceUrl);
 		return authResp;
 	}
+	
+	@RequestMapping(value="/shares", method = RequestMethod.POST)
+	@ResponseBody
+	public SharedFile share(
+			@RequestParam(value = "space", required = false) String space, 
+			@RequestParam(value = "file", required = false) String file, 
+			@RequestParam(value = "isDir", required = false) Boolean isDir,  
+			@RequestParam(value = "user", required = false) String userId,   
+			@RequestParam(value = "permission", required = false) Integer permissionCode, 
+			HttpServletRequest request) {
+		User user = WebUtil.getUser(request);
+		String path = decodeUrl(file);
+		log.info("User {} share of {}:{} (isDir={}) to user {} with permission {}", user.toString(), space, path, isDir, userId, permissionCode);
+		
+		SharingFile sharingFile = new SharingFile();
+		sharingFile.setFilePath(file);
+		sharingFile.setDir(isDir != null ? isDir : false);
+		sharingFile.setUserId(userId);
+		SharingFile.Permission permission = SharingFile.Permission.getPermission(permissionCode);
+		sharingFile.setPermission(permission);
+		
+		Params params = new Params();
+		params.setUser(user);
+		SharedFile sharedFile = getService().share(params, sharingFile);
+		return sharedFile;
+	}
+	
+	@RequestMapping(value="/shares")
+	@ResponseBody
+	public List<SharedFile> getShares(
+			@RequestParam(value = "space", required = false) String space, 
+			@RequestParam(value = "file", required = false) String file,
+			HttpServletRequest request) {
+		User user = WebUtil.getUser(request);
+		String path = decodeUrl(file);
+		log.info("User {} get shares of {}:{}", user.toString(), space, path);
+		
+		PathParams params = new PathParams(user, space, path);
+		List<SharedFile> sharedFiles = getService().getShares(params);
+		return sharedFiles;
+	}
 
 	@Override
-	protected FileService getService() {
+	protected FileCruiserService getService() {
 		return fileCruiserService;
 	}
 	

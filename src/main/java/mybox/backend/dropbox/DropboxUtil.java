@@ -3,9 +3,9 @@ package mybox.backend.dropbox;
 import java.io.InputStream;
 import java.util.List;
 
-import mybox.model.Params;
-import mybox.model.UploadParams;
 import mybox.model.dropbox.DropboxUser;
+import mybox.to.Params;
+import mybox.to.UploadParams;
 import mybox.util.HttpUtil;
 
 import org.slf4j.Logger;

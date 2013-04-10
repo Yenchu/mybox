@@ -1,4 +1,4 @@
-package mybox.to;
+package mybox.web.vo;
 
 public class Notice {
 	

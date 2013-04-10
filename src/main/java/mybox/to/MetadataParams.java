@@ -1,7 +1,9 @@
-package mybox.model;
+package mybox.to;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import mybox.model.User;
 
 public class MetadataParams extends EntryParams {
 

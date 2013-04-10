@@ -2,11 +2,11 @@ package mybox.service;
 
 import static org.junit.Assert.assertNotNull;
 import mybox.SpringUnitTest;
-import mybox.model.LoginParams;
-import mybox.model.Params;
 import mybox.model.Space;
 import mybox.model.User;
 import mybox.model.filecruiser.FileCruiserUser;
+import mybox.to.LoginParams;
+import mybox.to.Params;
 
 import org.junit.Test;
 import org.slf4j.Logger;

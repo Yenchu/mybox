@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.util.List;
 
 import mybox.json.JsonConverter;
-import mybox.model.ChunkedUploadParams;
 import mybox.model.MetadataEntry;
 import mybox.model.dropbox.ChunkedUploadResponse;
 import mybox.model.dropbox.DropboxUser;
@@ -19,6 +18,7 @@ import mybox.rest.RestClient;
 import mybox.rest.RestResponse;
 import mybox.rest.RestResponseConverter;
 import mybox.rest.RestResponseValidator;
+import mybox.to.ChunkedUploadParams;
 
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;

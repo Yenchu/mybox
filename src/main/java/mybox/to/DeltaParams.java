@@ -1,4 +1,4 @@
-package mybox.model;
+package mybox.to;
 
 import java.util.ArrayList;
 import java.util.List;

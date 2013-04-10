@@ -13,40 +13,42 @@ import mybox.backend.filecruiser.Resource;
 import mybox.exception.Error;
 import mybox.exception.ErrorException;
 import mybox.json.JsonConverter;
-import mybox.model.BulkParams;
-import mybox.model.ChunkedUploadParams;
-import mybox.model.CopyParams;
-import mybox.model.CreateParams;
-import mybox.model.DeleteParams;
 import mybox.model.DeltaPage;
-import mybox.model.DeltaParams;
-import mybox.model.EntryParams;
-import mybox.model.EntryUtil;
 import mybox.model.FileEntry;
 import mybox.model.Link;
-import mybox.model.LinkParams;
-import mybox.model.LoginParams;
 import mybox.model.MetadataEntry;
-import mybox.model.MetadataParams;
-import mybox.model.MoveParams;
-import mybox.model.Params;
-import mybox.model.ParamsUtil;
-import mybox.model.PathParams;
-import mybox.model.RevisionParams;
-import mybox.model.SearchParams;
 import mybox.model.Space;
-import mybox.model.ThumbnailParams;
-import mybox.model.UploadParams;
 import mybox.model.filecruiser.FileCruiserSpace;
 import mybox.model.filecruiser.FileCruiserUser;
+import mybox.model.filecruiser.SharedFile;
+import mybox.model.filecruiser.SharingFile;
 import mybox.model.keystone.Auth;
 import mybox.model.keystone.Project;
 import mybox.model.keystone.Token;
 import mybox.model.keystone.User;
 import mybox.rest.RestResponse;
 import mybox.task.HttpPostWorker;
+import mybox.to.BulkParams;
+import mybox.to.ChunkedUploadParams;
+import mybox.to.CopyParams;
+import mybox.to.CreateParams;
+import mybox.to.DeleteParams;
+import mybox.to.DeltaParams;
+import mybox.to.EntryParams;
 import mybox.to.FileOperationResponse;
+import mybox.to.LinkParams;
+import mybox.to.LoginParams;
+import mybox.to.MetadataParams;
+import mybox.to.MoveParams;
+import mybox.to.Params;
+import mybox.to.PathParams;
+import mybox.to.RevisionParams;
+import mybox.to.SearchParams;
+import mybox.to.ThumbnailParams;
+import mybox.to.UploadParams;
+import mybox.util.EntryUtil;
 import mybox.util.FileUtil;
+import mybox.util.ParamsUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -63,16 +65,13 @@ public class FileCruiserServiceImpl extends AbstractBackendService implements Fi
 	private static final Logger log = LoggerFactory.getLogger(FileCruiserServiceImpl.class);
 	
 	@Autowired
+	private UserService userService;
+
+	@Autowired
 	private HttpPostWorker httpPostWorker;
 	
-	public User getUser(FileCruiserUser user) {
-		String token = user.getToken();
-		String userId = user.getId();
-		String resource = buildPath(Resource.USERS, userId);
-		String url = getUserUrl(resource);
-		User rtUser = this.get(url, token, User.class, true);
-		return rtUser;
-	}
+	//* for test
+	private List<SharedFile> sharedFiles = new ArrayList<SharedFile>();
 	
 	public Project getProject(FileCruiserUser user, String projectId) {
 		String token = user.getToken();
@@ -126,7 +125,7 @@ public class FileCruiserServiceImpl extends AbstractBackendService implements Fi
 		FileCruiserUser fcUser = (FileCruiserUser) params.getUser();
 		String projectId;
 		if (StringUtils.isBlank(spaceId)) {
-			User user = getUser(fcUser);
+			User user = userService.getUser(fcUser);
 			projectId = user.getDefaultProjectId();
 		} else {
 			projectId = spaceId;
@@ -146,8 +145,6 @@ public class FileCruiserServiceImpl extends AbstractBackendService implements Fi
 
 	@Override
 	public MetadataEntry getFiles(PathParams params) {
-		//FileCruiserUser fcUser = (FileCruiserUser) params.getUser();
-		//String root = params.getRoot();
 		Space space = getSpace(params);
 		String path = params.getPath();
 		
@@ -265,6 +262,19 @@ public class FileCruiserServiceImpl extends AbstractBackendService implements Fi
 	public List<MetadataEntry> search(SearchParams params) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	public SharedFile share(Params params, SharingFile sharingFile) {
+		FileCruiserUser user = (FileCruiserUser) params.getUser();
+		String toUseId = sharingFile.getUserId();
+		User toUser = userService.getUser(toUseId);
+		
+		SharedFile sharedFile = new SharedFile();
+		return sharedFile;
+	}
+	
+	public List<SharedFile> getShares(PathParams params) {
+		return sharedFiles;
 	}
 
 	@Override

@@ -1,12 +1,10 @@
 package mybox.web.interceptor;
 
-import static mybox.backend.dropbox.DropboxUtil.getDefaultUser;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import mybox.model.User;
-import mybox.model.dropbox.DropboxUser;
+import mybox.model.filecruiser.FileCruiserUser;
 import mybox.util.WebUtil;
 
 import org.slf4j.Logger;
@@ -29,9 +27,8 @@ public class AppInterceptor extends HandlerInterceptorAdapter {
 				response.sendRedirect(contextPath + "/login");
 				return false;
 			}
-			/*user = getDefaultUser();
-			user.setName("Guest");
-			WebUtil.setUser(request, user);*/
+			//user = FileCruiserUser.getDefaultUser();
+			//WebUtil.setUser(request, user);
 		}
 		return true;
 	}

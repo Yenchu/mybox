@@ -14,6 +14,15 @@ public class FileCruiserUser extends User {
 	
 	private Date expiresAt;
 	
+	public static FileCruiserUser getUser4Test() {
+		FileCruiserUser user = new FileCruiserUser();
+		user.setId("guest_001");
+		user.setName("Guest");
+		user.setDomainId("cs.promise.com.tw");
+		user.setDomainName("temp");
+		return user;
+	}
+	
 	public String toString() {
 		StringBuilder buf = new StringBuilder();
 		buf.append(super.toString());
