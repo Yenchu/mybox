@@ -1,8 +1,5 @@
 package mybox.to;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import mybox.model.User;
 
 public class MetadataParams extends EntryParams {
@@ -26,41 +23,6 @@ public class MetadataParams extends EntryParams {
 	
 	public MetadataParams(User user, String root, String path) {
 		super(user, root, path);
-	}
-	
-	public List<String> getParamList() {
-		List<String> params = new ArrayList<String>();
-		params.add("list");
-		params.add(String.valueOf(list));
-		if (list) {
-			params.add("include_deleted");
-			params.add(String.valueOf(includeDeleted));
-		}
-		
-		if (fileLimit <= 0 || fileLimit > METADATA_DEFAULT_LIMIT) {
-			fileLimit = METADATA_DEFAULT_LIMIT;
-		}
-		params.add("file_limit");
-		params.add(String.valueOf(fileLimit));
-		
-		if (hash != null && !"".equals(hash)) {
-			params.add("hash");
-			params.add(hash);
-		}
-		if (rev != null && !"".equals(rev)) {
-			params.add("rev");
-			params.add(rev);
-		}
-		if (locale != null && !"".equals(locale)) {
-			params.add("locale");
-			params.add(locale);
-		}
-		return params;
-	}
-
-	public String[] getParamArray() {
-		List<String> params = getParamList();
-		return params.toArray(new String[params.size()]);
 	}
 
 	public String getHash() {

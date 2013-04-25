@@ -6,7 +6,7 @@ import java.util.List;
 import mybox.model.dropbox.DropboxUser;
 import mybox.to.Params;
 import mybox.to.UploadParams;
-import mybox.util.HttpUtil;
+import mybox.util.UrlEncodeUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,7 +136,7 @@ public class DropboxUtil {
 		String[] signedHeaders = null;
 		if (headers != null && headers.length > 0) {
 			signedHeaders = new String[headers.length + 2];
-			HttpUtil.encodeHeaders(signedHeaders, headers);
+			UrlEncodeUtil.encodeHeaders(signedHeaders, headers);
 		} else {
 			signedHeaders = new String[2];
 		}
@@ -227,13 +227,13 @@ public class DropboxUtil {
 	}
 
 	private static String encodeQueryString(String[] qryStr) {
-		String result = HttpUtil.encodeQueryString(qryStr);
+		String result = UrlEncodeUtil.encodeQueryString(qryStr);
 		result.replace("*", "%2A");
 		return result;
 	}
 	
 	private static String encode(String s) {
-		return HttpUtil.encodeUrl(s);
+		return UrlEncodeUtil.encode(s);
 	}
 	
 	// methods using Dropbox API for test

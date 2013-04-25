@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import mybox.backend.ParamsUtil;
 import mybox.json.JsonConverter;
 import mybox.model.MetadataEntry;
 import mybox.model.dropbox.ChunkedUploadResponse;
@@ -31,6 +32,8 @@ public class ChunkedUploader {
 	private RestClient restClient;
 	
 	private ChunkedUploadResponseHandler restResponseHandler = new ChunkedUploadResponseHandler();
+	
+	private RestResponseValidator restResponseValidator = new RestResponseValidator();
 
 	public ChunkedUploader(RestClient restClient) {
 		this.restClient = restClient;
@@ -76,7 +79,7 @@ public class ChunkedUploader {
 		
 		String root = params.getRoot();
 		String path = params.getPath();
-		List<String> qryStr = params.getParamList();
+		List<String> qryStr = ParamsUtil.getParamList(params);
 		MetadataEntry entry = commit(headers, root, path, qryStr, uploadId);
 		return entry;
 	}
@@ -114,7 +117,7 @@ public class ChunkedUploader {
 		public ChunkedUploadResponse convert(RestResponse<String> restResponse) {
 			// 400 The offset parameter does not match up with what the server expects. The body of the error response will be JSON similar to the above, indicating the correct offset to upload.
 			//{"expires": "Tue, 02 Oct 2012 07:30:44 +0000", "upload_id": "uxOxcvD_kj-6RuYFQXYfpw", "offset": 0, "error": "Submitted input out of alignment: got [4194304] expected [0]"}
-			RestResponseValidator.validateResponse(restResponse, HttpStatus.SC_BAD_REQUEST);
+			restResponseValidator.validateResponse(restResponse, HttpStatus.SC_BAD_REQUEST);
 			ChunkedUploadResponse resp = JsonConverter.fromJson(restResponse.getBody(), ChunkedUploadResponse.class);
 			return resp;
 		}

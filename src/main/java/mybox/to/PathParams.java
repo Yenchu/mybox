@@ -1,8 +1,5 @@
 package mybox.to;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import mybox.model.User;
 
 public class PathParams extends Params {
@@ -23,15 +20,6 @@ public class PathParams extends Params {
 		this.user = user;
 		this.root = root;
 		this.path = path;
-	}
-
-	public List<String> getParamList() {
-		List<String> params = new ArrayList<String>();
-		if (locale != null && !"".equals(locale)) {
-			params.add("locale");
-			params.add(locale);
-		}
-		return params;
 	}
 	
 	public String getRoot() {

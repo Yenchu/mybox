@@ -12,10 +12,10 @@ import javax.mail.internet.MimeUtility;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import mybox.backend.PathUtil;
 import mybox.exception.Error;
 import mybox.exception.ErrorException;
 import mybox.json.JsonConverter;
-import mybox.model.DeltaPage;
 import mybox.model.FileEntry;
 import mybox.model.Link;
 import mybox.model.MetadataEntry;
@@ -26,7 +26,6 @@ import mybox.to.AuthResponse;
 import mybox.to.CopyParams;
 import mybox.to.CreateParams;
 import mybox.to.DeleteParams;
-import mybox.to.DeltaParams;
 import mybox.to.EntryParams;
 import mybox.to.FileOperationResponse;
 import mybox.to.LinkParams;
@@ -41,7 +40,7 @@ import mybox.to.ThumbnailParams;
 import mybox.to.UploadParams;
 import mybox.to.UploadResponse;
 import mybox.util.FileUtil;
-import mybox.util.HttpUtil;
+import mybox.util.UrlEncodeUtil;
 import mybox.util.UserAgentParser;
 import mybox.util.WebUtil;
 import mybox.web.vo.TreeNode;
@@ -74,6 +73,11 @@ public abstract class AbstractFileController extends BaseController {
 		return 3; // default naming rule for service
 	}
 
+	@RequestMapping(value={"", "/"})
+	public String home(HttpServletRequest request) {
+		return getFiles(null, request);
+	}
+
 	@RequestMapping(value="/login", method = RequestMethod.POST)
 	@ResponseBody
 	public AuthResponse auth(
@@ -84,23 +88,14 @@ public abstract class AbstractFileController extends BaseController {
 		log.info("User {} from {} login!", username, ip);
 		
 		LoginParams param = new LoginParams(username, password);
-		param.setIp(ip);
 		User user = getService().auth(param);
-		if (user == null) {
-			throw new ErrorException(Error.unauthorized());
-		}
 		WebUtil.setUser(request, user);
 		
-		String path = WebUtil.getFirstPathAfterContextPath(request);
-		String serviceUrl = request.getContextPath() + path;
+		String serviceType = WebUtil.getFirstPathAfterContextPath(request);
+		String serviceUrl = PathUtil.buildPath(request.getContextPath(), serviceType);
 		AuthResponse authResp = new AuthResponse();
 		authResp.setServiceUrl(serviceUrl);
 		return authResp;
-	}
-
-	@RequestMapping(value={"", "/"})
-	public String home(HttpServletRequest request) {
-		return getFiles(null, request);
 	}
 	
 	@RequestMapping(value = "/metadata/**")
@@ -109,7 +104,7 @@ public abstract class AbstractFileController extends BaseController {
 			HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
 		String folder = getRestOfPath(request, getServicePathLength() + 9); // 8 + 9: sum of length(/dropbox + /metadata)
-		log.debug("User {} list {}:{}", user, (spaceId != null ? spaceId : "root"), folder);
+		log.debug("User {} list {}:{}", user.getName(), (spaceId != null ? spaceId : "root"), folder);
 		
 		Params params = new Params();
 		params.setUser(user);
@@ -132,7 +127,7 @@ public abstract class AbstractFileController extends BaseController {
 			HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
 		String path = decodeUrl(folder);
-		log.debug("User {} page {}:{}", user.toString(), space, path);
+		log.debug("User {} page {}:{}", user.getName(), space, path);
 
 		MetadataParams params = new MetadataParams(user, space, path);
 		params.setList(true);
@@ -162,7 +157,7 @@ public abstract class AbstractFileController extends BaseController {
 			HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
 		String path = decodeUrl(folder);
-		log.debug("User {} dir {}:{}", user.toString(), space, path);
+		log.debug("User {} dir {}:{}", user.getName(), space, path);
 		
 		MetadataParams params = new MetadataParams(user, space, path);
 		params.setList(true);
@@ -189,7 +184,7 @@ public abstract class AbstractFileController extends BaseController {
 			HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
 		String path = decodeUrl(folder);
-		log.debug("User {} dir {}:{}", user.toString(), space, path);
+		log.debug("User {} dir {}:{}", user.getName(), space, path);
 		
 		MetadataParams params = new MetadataParams(user, space, path);
 		params.setList(true);
@@ -218,7 +213,9 @@ public abstract class AbstractFileController extends BaseController {
 		
 		EntryParams params = new EntryParams(user, space, path);
 		FileEntry entry = getService().download(params);
-		
+		download(entry, request, response);
+	}
+	protected void download(FileEntry entry, HttpServletRequest request, HttpServletResponse response) {
 		MetadataEntry metadata = entry.getMetadata();
 		String contentType = entry.getMimeType();
 		InputStream in = entry.getContent();
@@ -231,10 +228,10 @@ public abstract class AbstractFileController extends BaseController {
 			String userAgent = request.getHeader("user-agent");
 			if (UserAgentParser.isIE(userAgent)) {
 				// IE required URL-encoded file name 
-				response.setHeader("Content-Disposition", "attachment; filename=\"" + HttpUtil.encodeUrl(fileName).replace("+", "%20") + "\"");
+				response.setHeader("Content-Disposition", "attachment; filename=\"" + UrlEncodeUtil.encode(fileName).replace("+", "%20") + "\"");
 			} else if (UserAgentParser.isSafari(userAgent)) {
 				// Safari doesn't support non US-ASCII characters in file name
-				response.setCharacterEncoding("UTF-8");
+				//response.setCharacterEncoding("UTF-8");
 				response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
 			} else {
 				// to support non US-ASCII characters in file name
@@ -265,7 +262,7 @@ public abstract class AbstractFileController extends BaseController {
 		if (path == null || "".equals(path)) {
 			throw new ErrorException(Error.badRequest("Get thumbnail request from " + user.toString() + " doesn't have file path!"));
 		}
-		log.debug("User {} get thumbnail {}:{}", user.toString(), space, path);
+		log.debug("User {} get thumbnail {}:{}", user.getName(), space, path);
 		
 		ThumbnailParams params = new ThumbnailParams(user, space, path);
 		InputStream content = getService().getThumbnail(params);
@@ -310,24 +307,6 @@ public abstract class AbstractFileController extends BaseController {
 			log.error(e.getMessage(), e);
 			log.error("Got exception when handling request {} from {}: {}", request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage());
 		}
-	}
-	
-	@RequestMapping(value = "/delta", method = RequestMethod.POST)
-	@ResponseBody
-	public DeltaPage<MetadataEntry> delta(
-			@RequestParam(value = "cursor", required = false) String cursor, 
-			@RequestParam(value = "locale", required = false) String locale, 
-			HttpServletRequest request) {
-		User user = WebUtil.getUser(request);
-		log.debug("User {} get delta.", user.toString());
-		
-		DeltaParams params = new DeltaParams();
-		params.setUser(user);
-		params.setCursor(cursor);
-		params.setLocale(locale);
-		DeltaPage<MetadataEntry> entry = getService().delta(params);
-		log.debug("delta: {}", entry);
-		return entry;
 	}
 
 	@RequestMapping(value = "/fileops/edit", method = RequestMethod.POST)
@@ -435,7 +414,7 @@ public abstract class AbstractFileController extends BaseController {
 			HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
 		String path = getRestOfPath(request, getServicePathLength() + 11 + space.length()); // 8 + 10 + (1 + space.length)
-		log.debug("User {} get revisions of {}:{}", user.toString(), space, path);
+		log.debug("User {} get revisions of {}:{}", user.getName(), space, path);
 		
 		if (StringUtils.isBlank(path) || StringUtils.isBlank(space)) {
 			return error(request, "metadata", "No valid file is provided to get its revisions!");
@@ -496,7 +475,7 @@ public abstract class AbstractFileController extends BaseController {
 			HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
 		String path = decodeUrl(folder);
-		log.debug("User {} search {} in {}:{}", user.toString(), query, space, path);
+		log.debug("User {} search {} in {}:{}", user.getName(), query, space, path);
 		
 		SearchParams params = new SearchParams(user, space, path);
 		params.setQuery(query);

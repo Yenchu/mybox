@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import mybox.model.mondo.MondoUser;
-import mybox.util.HttpUtil;
+import mybox.util.UrlEncodeUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,17 +13,11 @@ public class MondoUtil {
 
 	private static final Logger log = LoggerFactory.getLogger(MondoUtil.class);
 	
-	public static String encodeUrl(String str) {
-		String encodedStr = HttpUtil.encodeUrl(str);
-		encodedStr = encodedStr.replace("%2F", "/").replace("+", "%20").replace("*", "%2A");
-		return encodedStr;
-	}
-	
 	public static String[] getSignedHeaders(MondoUser user, String... headers) {
 		String[] signedHeaders = null;
 		if (headers != null && headers.length > 0) {
 			signedHeaders = new String[headers.length + 2];
-			HttpUtil.encodeHeaders(signedHeaders, headers);
+			UrlEncodeUtil.encodeHeaders(signedHeaders, headers);
 		} else {
 			signedHeaders = new String[2];
 		}

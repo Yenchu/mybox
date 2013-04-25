@@ -45,10 +45,6 @@
 			<add-attribute value="/WEB-INF/views/login/loginJs.jsp" />
 		</put-list-attribute>
 	</definition>
-	
-	<definition name="users" extends="contentOnlyLayout">
-		<put-attribute name="content" value="/WEB-INF/views/users.jsp" cascade="true" />
-	</definition>
 
 	<definition name="fileLayout" extends="leftNavContentLayout">
 		<put-attribute name="leftNav" value="/WEB-INF/views/files/fileLeftNav.jsp" cascade="true" />

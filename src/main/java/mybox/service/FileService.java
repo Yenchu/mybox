@@ -3,7 +3,6 @@ package mybox.service;
 import java.io.InputStream;
 import java.util.List;
 
-import mybox.model.DeltaPage;
 import mybox.model.FileEntry;
 import mybox.model.Link;
 import mybox.model.MetadataEntry;
@@ -13,7 +12,6 @@ import mybox.to.ChunkedUploadParams;
 import mybox.to.CopyParams;
 import mybox.to.CreateParams;
 import mybox.to.DeleteParams;
-import mybox.to.DeltaParams;
 import mybox.to.EntryParams;
 import mybox.to.FileOperationResponse;
 import mybox.to.LinkParams;
@@ -50,8 +48,6 @@ public interface FileService {
 	public MetadataEntry upload(UploadParams params);
 	
 	public MetadataEntry chunkedUpload(ChunkedUploadParams params);
-	
-	public DeltaPage<MetadataEntry> delta(DeltaParams params);
 	
 	public List<MetadataEntry> getRevisions(RevisionParams params);
 	

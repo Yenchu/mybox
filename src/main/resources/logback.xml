@@ -9,9 +9,9 @@
 </appender>
 
 <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-	<file>../logs/mybox.log</file>
+	<file>/var/log/tomcat7/userPortal.log</file>
 	<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-		<fileNamePattern>larkspur-up.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+		<fileNamePattern>userPortal.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
 		<maxHistory>30</maxHistory>
 		<timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
 			<maxFileSize>10MB</maxFileSize>

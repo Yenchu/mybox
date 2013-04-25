@@ -2,7 +2,7 @@ package mybox.web.controller;
 
 import javax.servlet.http.HttpServletRequest;
 
-import mybox.util.HttpUtil;
+import mybox.util.UrlEncodeUtil;
 import mybox.web.vo.Notice;
 
 import org.apache.commons.lang3.StringUtils;
@@ -38,7 +38,7 @@ public class BaseController {
 	protected String decodeUrl(String encodedPath) {
 		String path = null;
 		if (StringUtils.isNotBlank(encodedPath)) {
-			path = HttpUtil.decodeUrl(encodedPath);
+			path = UrlEncodeUtil.decode(encodedPath);
 		}
 		return path;
 	}
@@ -68,7 +68,7 @@ public class BaseController {
 				notice = Notice.info(messages[0]);
 			}
 		} else {
-			notice = Notice.info();
+			notice = Notice.info("");
 		}
 		request.setAttribute("notice", notice);
 	}
@@ -88,7 +88,7 @@ public class BaseController {
 				notice = Notice.error(messages[0]);
 			}
 		} else {
-			notice = Notice.error();
+			notice = Notice.error("");
 		}
 		request.setAttribute("notice", notice);
 	}

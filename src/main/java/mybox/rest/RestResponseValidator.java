@@ -12,11 +12,11 @@ import mybox.exception.Error;
 import mybox.exception.ErrorException;
 import mybox.json.JsonConverter;
 
-public abstract class RestResponseValidator {
+public class RestResponseValidator {
 	
 	private static final Logger log = LoggerFactory.getLogger(RestResponseValidator.class);
 	
-	public static <T> void validateResponse(RestResponse<T> restResponse, int... validStatusCodes) {
+	public <T> void validateResponse(RestResponse<T> restResponse, int... validStatusCodes) {
 		if (restResponse == null) {
 			String msg = "The rest response is empty!";
 			throw new ErrorException(Error.internalServerError(msg));
@@ -31,7 +31,7 @@ public abstract class RestResponseValidator {
 		validateStatusCode(restResponse, validStatusCodes);
 	}
 	
-	protected static <T> void validateStatusCode(RestResponse<T> restResponse, int... validStatusCodes) {
+	protected <T> void validateStatusCode(RestResponse<T> restResponse, int... validStatusCodes) {
 		int statusCode = restResponse.getStatusCode();
 		if (validStatusCodes != null && validStatusCodes.length > 0) {
 			for (int validStatusCode: validStatusCodes) {
@@ -61,7 +61,7 @@ public abstract class RestResponseValidator {
 		}
 	}
 
-	protected static void throwException(int statusCode, String content) {
+	protected void throwException(int statusCode, String content) {
 		Error error = null;
 		if (content != null && !"".equals(content)) {
 			try {

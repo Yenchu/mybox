@@ -12,10 +12,9 @@
 			<div class="nav-collapse collapse">
 				<ul class="nav">
 					<li id="topnav-home"><a href="${service}/">Home</a></li>
-					<!-- <li id="topnav-groups"><a href="${service}/website/${space.id}/html/index.html">Pages</a></li> -->
-					<li id="topnav-event"><a href="${contextPath}/users">Events</a></li>
-					<li id="topnav-apps"><a href="${contextPath}/users">Apps</a></li>
-					<li id="topnav-settings"><a href="${contextPath}/users">Settings</a></li>
+					<li id="topnav-events"><a href="${contextPath}/events">Events</a></li>
+					<li id="topnav-apps"><a href="${contextPath}/apps">Apps</a></li>
+					<li id="topnav-settings"><a href="${contextPath}/settings">Settings</a></li>
 					<li id="topnav-account" class="dropdown">
 						<a class="dropdown-toggle" data-toggle="dropdown" href="#">Account<b class="caret"></b></a>
 						<ul class="dropdown-menu">
@@ -23,12 +22,10 @@
 							<li><a href="${contextPath}/account/password">Change Password</a></li>
 						</ul>
 					</li>
+					<li><a href="${contextPath}/logout">Logout</a></li>
 				</ul>
 				<div class="dropdown pull-right">
-					<a class="btn dropdown-toggle" data-toggle="dropdown" href="#"><i class="icon-user"></i> ${user.name} <b class="caret"></b></a>
-					<ul class="dropdown-menu">
-						<li><a href="${contextPath}/logout">Logout</a></li>
-					</ul>
+					<i class="icon-user"></i> ${user.name}
 				</div>
 			</div>
 		</div>
@@ -40,8 +37,10 @@ function highlightTopNav() {
 	var path = window.location.href;
 	if (path.indexOf('${service}') >= 0) {
 		$('#topnav-home').addClass('active');
-	} else if (path.indexOf('/users') >= 0) {
-		$('#topnav-users').addClass('active');
+	} else if (path.indexOf('/events') >= 0) {
+		$('#topnav-events').addClass('active');
+	} else if (path.indexOf('/apps') >= 0) {
+		$('#topnav-apps').addClass('active');
 	} else if (path.indexOf('/settings') >= 0) {
 		$('#topnav-settings').addClass('active');
 	} else if (path.indexOf('/account') >= 0) {
@@ -51,9 +50,20 @@ function highlightTopNav() {
 	}
 }
 $(function() {
-	<c:if test="${not empty notice}">
-	notify('${notice.message}', '${notice.type}');
-	</c:if>
+	<c:choose>
+		<c:when test="${notice.error}">
+			error('${notice.message}');
+		</c:when>
+		<c:when test="${notice.info}">
+			info('${notice.message}');
+		</c:when>
+		<c:when test="${notice.success}">
+			success('${notice.message}');
+		</c:when>
+		<c:when test="${notice.warning}">
+			warning('${notice.message}');
+		</c:when>
+	</c:choose>
 	highlightTopNav();
 });
 </script>

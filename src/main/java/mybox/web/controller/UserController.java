@@ -4,7 +4,6 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import mybox.model.filecruiser.FileCruiserUser;
 import mybox.model.keystone.User;
 import mybox.service.UserService;
 import mybox.to.Page;
@@ -28,9 +27,8 @@ public class UserController extends BaseController {
 	@RequestMapping(value="/users")
 	@ResponseBody
 	public Page<User> getUsers(HttpServletRequest request) {
-		FileCruiserUser user = (FileCruiserUser) WebUtil.getUser(request);
-		log.debug("User {} get users.", user.toString());
-		List<User> users = userService.getUsers(user);
+		log.debug("User {} get users.", WebUtil.getUser(request).toString());
+		List<User> users = userService.getUsers();
 		return new Page<User>(users);
 	}
 }

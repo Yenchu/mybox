@@ -22,28 +22,28 @@ import static mybox.backend.dropbox.DropboxUtil.getUser;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import mybox.backend.MetadataListResponseHandler;
+import mybox.backend.ParamsUtil;
 import mybox.backend.dropbox.ChunkedUploader;
+import mybox.backend.dropbox.DeltaResponseHandler;
 import mybox.backend.dropbox.DropboxUtil;
 import mybox.exception.Error;
 import mybox.exception.ErrorException;
-import mybox.model.DeltaEntry;
-import mybox.model.DeltaPage;
 import mybox.model.FileEntry;
 import mybox.model.Link;
 import mybox.model.MetadataEntry;
 import mybox.model.Space;
 import mybox.model.User;
+import mybox.model.dropbox.DeltaPage;
 import mybox.model.dropbox.DropboxUser;
 import mybox.rest.RestClient;
+import mybox.rest.RestClientFactory;
 import mybox.rest.RestResponse;
-import mybox.rest.RestResponseConverter;
-import mybox.rest.RestResponseValidator;
 import mybox.task.HttpPostWorker;
 import mybox.to.BulkParams;
 import mybox.to.ChunkedUploadParams;
@@ -63,7 +63,6 @@ import mybox.to.RevisionParams;
 import mybox.to.SearchParams;
 import mybox.to.ThumbnailParams;
 import mybox.to.UploadParams;
-import mybox.util.EntryUtil;
 import mybox.util.FileUtil;
 
 import org.slf4j.Logger;
@@ -71,30 +70,24 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
 @Service
-public class DropboxServiceImpl implements DropboxService {
+public class DropboxServiceImpl extends AbstractFileService implements DropboxService {
 
 	private static final Logger log = LoggerFactory.getLogger(DropboxServiceImpl.class);
 
 	@Autowired
-	private RestClient restClient;
-
-	@Autowired
 	private HttpPostWorker httpPostWorker;
+
+	private RestClient restClient = RestClientFactory.getRestClient();
 
 	private DeltaResponseHandler deltaResponseHandler = new DeltaResponseHandler();
 
 	private MetadataListResponseHandler metadataListResponseHandler = new MetadataListResponseHandler();
 
 	public User auth(LoginParams params) {
+		//* just for test
 		if (!params.getPassword().equals("cloud")) {
-			log.info("{} from {} login failed!", params.getUsername(), params.getIp());
+			log.info("{} login failed!", params.getUsername());
 			return null;
 		}
 
@@ -131,7 +124,7 @@ public class DropboxServiceImpl implements DropboxService {
 		String[] headers = getSignedHeaders(user);
 		
 		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
-		EntryUtil.customEntries(space, entry);
+		customEntries(space, entry);
 		return entry;
 	}
 
@@ -140,19 +133,19 @@ public class DropboxServiceImpl implements DropboxService {
 		Space space = getSpace(params);
 		String root = params.getRoot();
 		String path = params.getPath();
-		String[] qryStr = params.getParamArray();
+		String[] qryStr = ParamsUtil.getQueryString(params);
 		
 		String url = getMetadataUrl(root, path, qryStr);
 		String[] headers = getSignedHeaders(user);
 		
 		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
-		EntryUtil.customEntries(space, entry);
+		customEntries(space, entry);
 		return entry;
 	}
 
 	public MetadataEntry getFolders(MetadataParams params) {
 		MetadataEntry parentEntry = getFiles(params);
-		List<MetadataEntry> folderEntries = EntryUtil.getFolders(parentEntry.getContents());
+		List<MetadataEntry> folderEntries = getFolders(parentEntry.getContents());
 		parentEntry.setContents(folderEntries);
 		return parentEntry;
 	}
@@ -161,13 +154,13 @@ public class DropboxServiceImpl implements DropboxService {
 		DropboxUser user = DropboxUtil.getUser(params);
 		String root = params.getRoot();
 		String path = params.getPath();
-		String[] qryStr = params.getParamArray();
+		String[] qryStr = ParamsUtil.getQueryString(params);
 
 		String url = getFileUrl(root, path, qryStr);
 		String[] headers = getSignedHeaders(user);
 
 		RestResponse<InputStream> restResponse = restClient.getStream(url, headers);
-		FileEntry entry = EntryUtil.convertDownloadResponse(restResponse, "x-dropbox-metadata");
+		FileEntry entry = convertDownloadResponse(restResponse, "x-dropbox-metadata");
 		return entry;
 	}
 
@@ -175,7 +168,7 @@ public class DropboxServiceImpl implements DropboxService {
 		DropboxUser user = getUser(params);
 		String root = params.getRoot();
 		String path = params.getPath();
-		String[] qryStr = params.getParamArray();
+		String[] qryStr = ParamsUtil.getQueryString(params);
 
 		String url = getThumbnailUrl(root, path, qryStr);
 		String[] headers = getSignedHeaders(user);
@@ -190,7 +183,7 @@ public class DropboxServiceImpl implements DropboxService {
 		String path = params.getPath();
 		InputStream is = params.getContent();
 		long length = params.getLength();
-		String[] qryStr = params.getParamArray();
+		String[] qryStr = ParamsUtil.getQueryString(params);
 
 		String url = getFilePutUrl(root, path, qryStr);
 		String[] headers = getSignedHeaders(user);
@@ -221,7 +214,7 @@ public class DropboxServiceImpl implements DropboxService {
 	}
 
 	protected DeltaPage<MetadataEntry> getDelta(DeltaParams params, String url, String[] headers) {
-		List<String> fields = params.getParamList();
+		List<String> fields = ParamsUtil.getParamList(params);
 		DeltaPage<MetadataEntry> deltaPage = restClient.post(deltaResponseHandler, url, fields, headers);
 
 		if (deltaPage.isHasMore()) {
@@ -244,7 +237,7 @@ public class DropboxServiceImpl implements DropboxService {
 		String[] headers = getSignedHeaders(user);
 
 		List<MetadataEntry> entries = restClient.get(metadataListResponseHandler, url, headers);
-		EntryUtil.customEntries(entries);
+		customEntries(entries);
 		return entries;
 	}
 
@@ -252,7 +245,7 @@ public class DropboxServiceImpl implements DropboxService {
 		DropboxUser user = getUser(params);
 		String root = params.getRoot();
 		String path = params.getPath();
-		List<String> fields = params.getParamList();
+		List<String> fields = ParamsUtil.getParamList(params);
 
 		String url = getRestoreUrl(root, path);
 		String[] headers = getSignedHeaders(user);
@@ -266,7 +259,7 @@ public class DropboxServiceImpl implements DropboxService {
 		DropboxUser user = getUser(params);
 		String root = params.getRoot();
 		String path = params.getPath();
-		List<String> fields = params.getParamList();
+		List<String> fields = ParamsUtil.getParamList(params);
 
 		String url = getShareUrl(root, path);
 		String[] headers = getSignedHeaders(user);
@@ -279,7 +272,7 @@ public class DropboxServiceImpl implements DropboxService {
 		DropboxUser user = getUser(params);
 		String root = params.getRoot();
 		String path = params.getPath();
-		List<String> fields = params.getParamList();
+		List<String> fields = ParamsUtil.getParamList(params);
 
 		String url = getMediaUrl(root, path);
 		String[] headers = getSignedHeaders(user);
@@ -292,19 +285,19 @@ public class DropboxServiceImpl implements DropboxService {
 		DropboxUser user = getUser(params);
 		String root = params.getRoot();
 		String path = params.getPath();
-		List<String> fields = params.getParamList();
+		List<String> fields = ParamsUtil.getParamList(params);
 		
 		String url = getSearchUrl(root, path);
 		String[] headers = getSignedHeaders(user);
 
 		List<MetadataEntry> entries = restClient.post(metadataListResponseHandler, url, fields, headers);
-		EntryUtil.customEntries(entries);
+		customEntries(entries);
 		return entries;
 	}
 
 	public FileOperationResponse createFolder(CreateParams params) {
 		DropboxUser user = getUser(params);
-		List<String> fields = params.getParamList();
+		List<String> fields = ParamsUtil.getParamList(params);
 
 		String url = getCreateFolderUrl();
 		String[] headers = getSignedHeaders(user);
@@ -320,21 +313,23 @@ public class DropboxServiceImpl implements DropboxService {
 
 	public List<FileOperationResponse> delete(DeleteParams params) {
 		String url = getDeleteUrl();
-		return post(params, url);
+		List<List<String>> fieldsList = ParamsUtil.getParamList(params);
+		return post(url, params, fieldsList);
 	}
 
 	public List<FileOperationResponse> move(MoveParams params) {
 		String url = getMoveUrl();
-		return post(params, url);
+		List<List<String>> fieldsList = ParamsUtil.getParamList(params);
+		return post(url, params, fieldsList);
 	}
 
 	public List<FileOperationResponse> copy(CopyParams params) {
 		String url = getCopyUrl();
-		return post(params, url);
+		List<List<String>> fieldsList = ParamsUtil.getParamList(params);
+		return post(url, params, fieldsList);
 	}
 
-	protected List<FileOperationResponse> post(BulkParams params, String url) {
-		List<List<String>> fieldsList = params.getParamList();
+	protected List<FileOperationResponse> post(String url, BulkParams params, List<List<String>> fieldsList) {
 		if (fieldsList == null || fieldsList.size() < 1) {
 			throw new ErrorException(Error.badRequest("No any selected files!"));
 		}
@@ -374,7 +369,7 @@ public class DropboxServiceImpl implements DropboxService {
 	}
 	
 	protected void customEntry(MetadataEntry entry) {
-		EntryUtil.customEntry(entry);
+		super.customEntry(entry);
 		
 		String modified = entry.getModified();
 		if (modified == null || modified.equals("")) {
@@ -387,76 +382,5 @@ public class DropboxServiceImpl implements DropboxService {
 			modified = modified.substring(0, idx - 1);
 			entry.setModified(modified);
 		}		
-	}
-
-	protected class DeltaResponseHandler extends RestResponseConverter<String, DeltaPage<MetadataEntry>> {
-
-		@Override
-		public DeltaPage<MetadataEntry> convert(RestResponse<String> restResponse) {
-			RestResponseValidator.validateResponse(restResponse);
-
-			String content = restResponse.getBody();
-			JsonParser parser = new JsonParser();
-			JsonElement je = parser.parse(content);
-			JsonObject jo = je.getAsJsonObject();
-
-			DeltaPage<MetadataEntry> deltaPage = new DeltaPage<MetadataEntry>();
-			JsonElement resetElem = jo.get("reset");
-			if (resetElem != null) {
-				deltaPage.setReset(resetElem.getAsBoolean());
-			}
-			JsonElement hasMoreElem = jo.get("has_more");
-			if (hasMoreElem != null) {
-				deltaPage.setHasMore(hasMoreElem.getAsBoolean());
-			}
-			JsonElement cursorElem = jo.get("cursor");
-			if (cursorElem != null) {
-				deltaPage.setCursor(cursorElem.getAsString());
-			}
-
-			List<DeltaEntry<MetadataEntry>> entries = new ArrayList<DeltaEntry<MetadataEntry>>();
-			deltaPage.setEntries(entries);
-
-			JsonArray entriesArr = jo.getAsJsonArray("entries");
-			Gson gson = new Gson();
-			Iterator<JsonElement> ite = entriesArr.iterator();
-			while (ite.hasNext()) {
-				JsonElement elem = ite.next();
-				JsonArray arr = elem.getAsJsonArray();
-
-				DeltaEntry<MetadataEntry> deltaEntry = new DeltaEntry<MetadataEntry>();
-				JsonElement lcPathElem = arr.get(0);
-				deltaEntry.setLcPath(lcPathElem.getAsString());
-
-				JsonElement metadataPathElem = arr.get(1);
-				MetadataEntry metadata = gson.fromJson(metadataPathElem, MetadataEntry.class);
-				deltaEntry.setMetadata(metadata);
-				entries.add(deltaEntry);
-			}
-			return deltaPage;
-		}
-	}
-
-	protected class MetadataListResponseHandler extends RestResponseConverter<String, List<MetadataEntry>> {
-
-		@Override
-		public List<MetadataEntry> convert(RestResponse<String> restResponse) {
-			RestResponseValidator.validateResponse(restResponse);
-
-			String content = restResponse.getBody();
-			JsonParser parser = new JsonParser();
-			JsonElement je = parser.parse(content);
-			JsonArray entriesArr = je.getAsJsonArray();
-
-			Gson gson = new Gson();
-			List<MetadataEntry> entries = new ArrayList<MetadataEntry>();
-			Iterator<JsonElement> ite = entriesArr.iterator();
-			while (ite.hasNext()) {
-				JsonElement elem = ite.next();
-				MetadataEntry entry = gson.fromJson(elem, MetadataEntry.class);
-				entries.add(entry);
-			}
-			return entries;
-		}
 	}
 }

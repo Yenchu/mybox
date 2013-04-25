@@ -79,9 +79,23 @@
 		</div>
 	</div>
 </div>
+<div id="user-modal" class="modal hide fade">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3></h3>
+	</div>
+	<div class="modal-body">
+	</div>
+	<div class="modal-footer">
+		<div class="pull-right">
+		<button type="button" class="btn btn-primary confirm">Submit</button>
+		<button type="button" class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+		</div>
+	</div>
 </div>
 </div>
-<script id="members-template" type="text/template">
+</div>
+<script id="share-template" type="text/template">
 <div>
 <table id="users-table" class="table table-bordered table-striped table-condensed"></table>
 <button type="button" id="read-only-btn" class="btn btn-small"><i class="icon-pencil"></i> Read Only</button>
@@ -89,13 +103,7 @@
 </div>
 <hr/>
 <div>
-<table class="table table-bordered table-condensed">
-	{{#members}}
-		<tr>
-		<td>{{name}}</td><td>{{role}}</td><td><a href="#"><i class="icon-minus"></i></a></td>
-		</tr>
-	{{/members}}
-</table>
+<table id="shares-table" class="table table-bordered table-striped table-condensed"></table>
 </div>
 </script>
 <script type="text/javascript">

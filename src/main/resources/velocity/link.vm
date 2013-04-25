@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+</head>
+<body>
+<h3>Hi ${data.emails} !</h3>
+<div>
+Your link address is <a href="${data.path}">${data.path}</a>.
+</div>
+</body>
+</html>

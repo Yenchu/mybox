@@ -1,34 +1,36 @@
 package mybox.model.filecruiser;
 
+import mybox.model.Permission;
+
 import com.google.gson.annotations.SerializedName;
 
 public class SharingFile {
-
+	
+	protected Permission permission;
+	
 	@SerializedName("file_path")
-	private String filePath;
+	protected String filePath;
 	
 	@SerializedName("is_dir")
 	protected boolean isDir;
 	
-	private Permission permission;
-	
 	@SerializedName("domain_id")
-	private String domainId;
+	protected String domainId;
 
 	@SerializedName("domain_name")
-	private String domainName;
+	protected String domainName;
 	
 	@SerializedName("tenant_id")
-	private String tenantId;
+	protected String tenantId;
 
 	@SerializedName("tenant_name")
-	private String tenantName;
+	protected String tenantName;
 	
 	@SerializedName("user_id")
-	private String userId;
+	protected String userId;
 
 	@SerializedName("user_name")
-	private String userName;
+	protected String userName;
 
 	public String toString() {
 		StringBuilder buf = new StringBuilder();
@@ -43,6 +45,14 @@ public class SharingFile {
 		buf.append(", userName=").append(userName);
 		return buf.toString();
 	}
+	
+	public Permission getPermission() {
+		return permission;
+	}
+
+	public void setPermission(Permission permission) {
+		this.permission = permission;
+	}
 
 	public String getFilePath() {
 		return filePath;
@@ -52,20 +62,12 @@ public class SharingFile {
 		this.filePath = filePath;
 	}
 
-	public boolean isDir() {
+	public boolean getIsDir() {
 		return isDir;
 	}
 
-	public void setDir(boolean isDir) {
+	public void setIsDir(boolean isDir) {
 		this.isDir = isDir;
-	}
-
-	public Permission getPermission() {
-		return permission;
-	}
-
-	public void setPermission(Permission permission) {
-		this.permission = permission;
 	}
 
 	public String getDomainId() {
@@ -114,36 +116,5 @@ public class SharingFile {
 
 	public void setUserName(String userName) {
 		this.userName = userName;
-	}
-	
-	public static class Permission {
-		
-		private Boolean write;
-		
-		public static Permission getPermission(Integer code) {
-			Permission permission = new Permission();
-			if (code != null) {
-				if (code == 2) {
-					permission.setWrite(true);
-					return permission;
-				}
-			}
-			permission.setWrite(false);
-			return permission;
-		}
-		
-		public String toString() {
-			StringBuilder buf = new StringBuilder();
-			buf.append("write=").append(write);
-			return buf.toString();
-		}
-
-		public Boolean getWrite() {
-			return write;
-		}
-
-		public void setWrite(Boolean write) {
-			this.write = write;
-		}
 	}
 }

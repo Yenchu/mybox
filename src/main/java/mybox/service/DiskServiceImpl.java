@@ -20,12 +20,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import mybox.model.DeltaPage;
 import mybox.model.FileEntry;
 import mybox.model.Link;
 import mybox.model.MetadataEntry;
 import mybox.model.Space;
 import mybox.model.User;
+import mybox.model.dropbox.DeltaPage;
 import mybox.to.ChunkedUploadParams;
 import mybox.to.CopyParams;
 import mybox.to.CreateParams;
@@ -44,7 +44,6 @@ import mybox.to.RevisionParams;
 import mybox.to.SearchParams;
 import mybox.to.ThumbnailParams;
 import mybox.to.UploadParams;
-import mybox.util.EntryUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +51,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
-public class DiskServiceImpl implements DiskService {
+public class DiskServiceImpl extends AbstractFileService implements DiskService {
 	
 	private static final Logger log = LoggerFactory.getLogger(DiskServiceImpl.class);
 
@@ -122,7 +121,7 @@ public class DiskServiceImpl implements DiskService {
 				}
 			}
 			folderEntry.setContents(entries);
-			EntryUtil.customEntries(space, folderEntry);
+			customEntries(space, folderEntry);
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
@@ -154,7 +153,7 @@ public class DiskServiceImpl implements DiskService {
 			}
 			
 			i++;
-			EntryUtil.customEntries(entries);
+			customEntries(entries);
 			page = new Page<MetadataEntry>(entries);
 			page.setPage(pageable.getPageNumber());
 			page.setPageSize(pageable.getPageSize());
@@ -200,7 +199,7 @@ public class DiskServiceImpl implements DiskService {
 		MetadataEntry entry = null;
 		try {
 			entry = getMetadata(Paths.get(path), false);
-			EntryUtil.customEntry(entry);
+			customEntry(entry);
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
@@ -269,10 +268,6 @@ public class DiskServiceImpl implements DiskService {
 	}
 	
 	public MetadataEntry chunkedUpload(ChunkedUploadParams params) {
-		return null;
-	}
-	
-	public DeltaPage<MetadataEntry> delta(DeltaParams params) {
 		return null;
 	}
 	

@@ -3,10 +3,11 @@ package mybox.web.controller;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import mybox.backend.PathUtil;
 import mybox.model.User;
 import mybox.util.WebUtil;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -22,12 +23,10 @@ public class AuthController extends BaseController {
 	public String login(@RequestParam(value = "service", required = false) String serviceType, 
 			HttpServletRequest request) {
 		if (StringUtils.isBlank(serviceType)) {
-			//* default service for test
-			serviceType = ServiceType.FILECRUISER.value();
+			serviceType = ServiceType.DROPBOX.value();
 		}
-		
-		String contextPath = request.getContextPath();
-		request.setAttribute("service", contextPath + "/" + serviceType);
+		String serviceUrl = PathUtil.buildPath(request.getContextPath(), serviceType);
+		request.setAttribute("service", serviceUrl);
 		return "login";
 	}
 	
@@ -41,6 +40,7 @@ public class AuthController extends BaseController {
 	
 	public enum ServiceType {
 
+		// default service type is empty
 		DISK("dk"), DROPBOX("db"), FILECRUISER("fc");
 		
 		private final String value;

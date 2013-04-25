@@ -1,8 +1,6 @@
 package mybox.to;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import mybox.model.User;
 
@@ -25,30 +23,6 @@ public class UploadParams extends PathParams {
 	
 	public UploadParams(User user, String root, String path) {
 		super(user, root, path);
-	}
-	
-	public List<String> getParamList() {
-		List<String> params = new ArrayList<String>();
-		if (!overwrite) {
-			params.add("overwrite");
-			params.add("false");
-		}
-
-		if (parentRev != null && !"".equals(parentRev)) {
-			params.add("parent_rev");
-			params.add(parentRev);
-		}
-		
-		if (locale != null && !"".equals(locale)) {
-			params.add("locale");
-			params.add(locale);
-		}
-		return params;
-	}
-	
-	public String[] getParamArray() {
-		List<String> params = getParamList();
-		return params.toArray(new String[params.size()]);
 	}
 
 	public InputStream getContent() {

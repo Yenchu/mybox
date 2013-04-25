@@ -1,8 +1,5 @@
 package mybox.to;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import mybox.model.User;
 
 public class SearchParams extends PathParams {
@@ -25,31 +22,6 @@ public class SearchParams extends PathParams {
 	public SearchParams(User user, String root, String path) {
 		super(user, root, path);
 	}
-	
-	public List<String> getParamList() {
-		List<String> params = new ArrayList<String>();
-		if (query != null && !"".equals(query)) {
-			params.add("query");
-			params.add(query);
-		}
-		
-		if (fileLimit <= 0 || fileLimit > SEARCH_DEFAULT_LIMIT) {
-			fileLimit = SEARCH_DEFAULT_LIMIT;
-		}
-		params.add("file_limit");
-		params.add(String.valueOf(fileLimit));
-
-		if (includeDeleted) {
-			params.add("include_deleted");
-			params.add(String.valueOf(includeDeleted));
-		}
-		
-		if (locale != null && !"".equals(locale)) {
-			params.add("locale");
-			params.add(locale);
-		}
-		return params;
-	}
 
 	public String getQuery() {
 		return query;
@@ -57,11 +29,6 @@ public class SearchParams extends PathParams {
 
 	public void setQuery(String query) {
 		this.query = query;
-	}
-
-	public String[] getParamArray() {
-		List<String> params = getParamList();
-		return params.toArray(new String[params.size()]);
 	}
 
 	public int getFileLimit() {

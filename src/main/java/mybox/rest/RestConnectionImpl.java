@@ -88,10 +88,6 @@ public class RestConnectionImpl implements RestConnection {
 		return execute(httpMethod, url, headers);
 	}
 
-	public RestResponse<String> post(String url, String... headers) {
-		return post(url, "", headers);
-	}
-
 	public RestResponse<String> post(String url, String body, String... headers) {
 		HttpPost httpMethod = new HttpPost(url);
 		RestResponse<String> restResponse = execute(httpMethod, url, body, headers);
@@ -277,8 +273,7 @@ public class RestConnectionImpl implements RestConnection {
 		HttpClient httpclient = new DefaultHttpClient();
 		if (isHttps) {
 			try {
-				SSLSocketFactory sf = new SSLSocketFactory(new TrustSelfSignedStrategy(),
-						SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+				SSLSocketFactory sf = new SSLSocketFactory(new TrustSelfSignedStrategy(), SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
 				Scheme https = new Scheme("https", httpsPort, sf);
 				httpclient.getConnectionManager().getSchemeRegistry().register(https);
 			} catch (Exception e) {

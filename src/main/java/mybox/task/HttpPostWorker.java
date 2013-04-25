@@ -5,8 +5,8 @@ import java.util.concurrent.Future;
 
 import mybox.model.MetadataEntry;
 import mybox.rest.RestClient;
+import mybox.rest.RestClientFactory;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Component;
@@ -14,12 +14,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class HttpPostWorker {
 
-	@Autowired
-	private RestClient restService;
+	private RestClient restClient= RestClientFactory.getRestClient();
 	
 	@Async
 	public Future<MetadataEntry> work(String url, List<String> fields, String... headers) {
-		MetadataEntry entry = restService.post(MetadataEntry.class, url, fields, headers);
+		MetadataEntry entry = restClient.post(MetadataEntry.class, url, fields, headers);
 		return new AsyncResult<MetadataEntry>(entry);
 	}
 }

@@ -17,23 +17,35 @@ function createTable(tableId, options) {
 	return $table;
 }
 
-function createSimpleUsersTable(tableId, contextPath) {
+function createSimpleUsersTable(tableId) {
 	var options = {
 		colModels: [
 			{name:'id', header:'ID', hidden:true},
 			{name:'name', header:'Name', sortable:true}
-			//{name:'groupIds', header:'Groups', sortable:true, optionsUrl:contextPath + '/groups/options'}
 		],
 		isMultiSelect: true,
 		isPageable: true,
-		remote: {url:contextPath + '/users?enabled=true'}
+		remote: {url:'${contextPath}/users'}
+	};
+	return createTable(tableId, options);
+}
+
+function createSharesTable(tableId, localData) {
+	var options = {
+		colModels: [
+			{name:'id', header:'ID', hidden:true},
+			{name:'toUserName', header:'Name'},
+			{name:'notation', header:'Permission', options:{'2':'write', '4':'read'}}
+		],
+		isPageable: true,
+		localData: localData
 	};
 	return createTable(tableId, options);
 }
 
 var FileTable = (function() {
 	
-	var FileType = {FOLDER:'folder', FILE:'file'};
+	var FileType = {FOLDER:'folder', FILE:'file'}, Notation = {WRITE:2, READ:4};
 	var loadFolderListener = null, spaceId = null, rootFolder = null, currentFolder = null;
 	var $table = null, options = null, isLoadingSubFolder = false, isLoadingSubFolderInSearch = false, isLoadingFiles = false, isSearching = false, isDragging = false;
 	
@@ -124,8 +136,12 @@ var FileTable = (function() {
 			}
 		}).off('added updated').on('added updated', function(e) {
 			var rowId = e.rowId, rowData = $table.pagingtable('getRowData', rowId), newFileName = rowData.name;
-			var msg = (rowId === '0' ? 'Creating folder ' + newFileName + ' success.' : 'Renaming to ' + newFileName + ' success.');
+			var msg = (!rowId || rowId == '0' ? 'Creating folder ' + newFileName + ' success.' : 'Renaming to ' + newFileName + ' success.');
 			notify(msg, NotifyType.SUCCESS);
+		}).off('addError updateError').on('addError updateError', function(e) {
+			var rowId = e.rowId, rowData = $table.pagingtable('getRowData', rowId), newFileName = rowData.name;
+			var msg = (!rowId || rowId == '0' ? 'Creating folder ' + newFileName + ' failed.' : 'Renaming to ' + newFileName + ' failed.');
+			notify(msg, NotifyType.ERROR);
 		});
 	}
 	
@@ -503,27 +519,104 @@ var FileTable = (function() {
 			url: '${service}/shares',
 			data: {space:spaceId, file:rowData.path}
 		}).done(function(resp) {
-			displayShares(resp);
+			displayShares(rowData, resp);
 		}).fail(function() {
 			notify('Getting shared files failed.', NotifyType.ERROR);
 		});
 	}
 
-	function displayShares(members) {
+	function displayShares(rowData, members) {
 		var $modal = $('#file-modal');
 		$modal.find('.modal-header h3').html('Share File');
 		
-		var data = {members:members};
-		var template = $('#members-template').html();
-		var view = Mustache.to_html(template, data);
+		var view = $('#share-template').html();
 		$modal.find('.modal-body').html(view);
-		createSimpleUsersTable('users-table', '${contextPath}');
 		
-		$modal.off('click', '.confirm').hide();
+		var $sharesTable = createSharesTable('shares-table', {records: members});
+		//var $usersTable = createSimpleUsersTable('users-table');
+		
+		var readOnlyShares = [];
+		$('#read-only-btn').off('click').on('click', function() {
+			//readOnlyShares = addSharing($usersTable, $sharesTable, rowData, Notation.READ);
+			selectUsers($modal);
+		});
+		var readWriteShares = [];
+		$('#read-write-btn').off('click').on('click', function() {
+			readWriteShares = addSharing($usersTable, $sharesTable, rowData, Notation.WRITE);
+		});
+		
+		$modal.attr('disabled', false).off('click', '.confirm').on('click', '.confirm', function() {
+			$(this).attr('disabled', true);
+			var updatedShares = $.merge($.merge([],readOnlyShares), readWriteShares);
+			shareFile(updatedShares);
+		});
 		$modal.modal('show');
 	}
 	
-	function shareFile(userId, permission) {
+	function selectUsers($shareModal) {
+		var $modal = $('#user-modal');
+		$modal.find('.modal-header h3').html('Select Users');
+		
+		var view = '<table id="users-table" class="table table-bordered table-striped table-condensed"></table>';
+		$modal.find('.modal-body').html(view);
+		var $usersTable = createSimpleUsersTable('users-table');
+		
+		$modal.off('hidden').on('hidden', function() {
+			$(this).find('.modal-body').empty();
+			$(this).off('click', '.confirm');
+			$shareModal.modal('show');
+		});
+		$modal.off('show');
+		$modal.modal('show');
+	}
+	
+	function addSharing($usersTable, $sharesTable, rowData, notatopn) {
+		var updatedShares = [];
+		var shares = $sharesTable.pagingtable('getAllRowData');
+		var newMembers = $usersTable.pagingtable('getMultiSelectedRowData');
+		for (var i = 0, len = newMembers.length; i < len; i++) {
+			var newMember = newMembers[i];
+			var isOld = false;
+			for (var j = 0; j < shares.length; j++) {
+				var share = shares[j];
+				if (newMember.id == share.toUserId) {
+					isOld = true;
+					console.log(notatopn + ' vs ' + share.notation);
+					if (notatopn != share.notation) {
+						console.log(newMember.id + ' will be updated permission to READ.');
+						share.notation = notatopn;
+						updatedShares.push(share);
+					} else {
+						console.log(newMember.id + ' won\'t be updated permission.');
+					}
+					break;
+				}
+			}
+			if (!isOld) {
+				//isNew:true, 
+				var newShare = {id:newMember.id, filePath:rowData.path, isDir:isFolder(rowData), notation:notatopn, toUserId:newMember.id, toUserName:newMember.name};
+				shares.push(newShare);
+				updatedShares.push(newShare);
+			}
+		}
+		$sharesTable.pagingtable('setRowDataMap', shares).pagingtable('reload');
+		return updatedShares;
+	}
+	
+	function shareFile(updatedShares) {
+		$.ajax({
+			url: '${service}/shares',
+			data: JSON.stringify(updatedShares),
+			contentType: 'application/json;charset=UTF-8',
+			type: 'POST'
+		}).done(function(resp) {
+			$('#file-modal').modal('hide');
+			notify('Sharing file success.', NotifyType.SUCCESS);
+		}).fail(function() {
+			notify('Sharing file failed.', NotifyType.ERROR);
+		});
+	}
+	function shareFileTmp(userId, permission) {
 		var rowData = getSelectedRowData();
 		var isDir = isFolder(rowData);
 		$.ajax({

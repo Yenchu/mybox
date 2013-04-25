@@ -1,8 +1,5 @@
 package mybox.to;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import mybox.model.User;
 
 public class ThumbnailParams extends PathParams {
@@ -20,24 +17,6 @@ public class ThumbnailParams extends PathParams {
 	
 	public ThumbnailParams(User user, String root, String path) {
 		super(user, root, path);
-	}
-	
-	public List<String> getParamList() {
-		List<String> params = new ArrayList<String>();
-		if (format != null && !"".equals(format)) {
-			params.add("format");
-			params.add(format);
-		}
-		if (size != null && !"".equals(size)) {
-			params.add("size");
-			params.add(size);
-		}
-		return params;
-	}
-
-	public String[] getParamArray() {
-		List<String> params = getParamList();
-		return params.toArray(new String[params.size()]);
 	}
 
 	public String getFormat() {

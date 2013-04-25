@@ -1,13 +1,17 @@
 package mybox.model.filecruiser;
 
-import mybox.model.filecruiser.SharingFile.Permission;
+import mybox.model.Permission;
 
 import com.google.gson.annotations.SerializedName;
 
 public class SharedFile {
 
 	private String id;
+
+	private Integer notation;
 	
+	private Permission permission;
+
 	@SerializedName("file_path")
 	private String filePath;
 	
@@ -17,8 +21,6 @@ public class SharedFile {
 	@SerializedName("shared_path")
 	private String sharedPath;
 	
-	private Permission permission;
-
 	@SerializedName("updated_time")
 	private String updatedTime;
 	
@@ -89,6 +91,22 @@ public class SharedFile {
 		this.id = id;
 	}
 
+	public Integer getNotation() {
+		return notation;
+	}
+
+	public void setNotation(Integer notation) {
+		this.notation = notation;
+	}
+
+	public Permission getPermission() {
+		return permission;
+	}
+
+	public void setPermission(Permission permission) {
+		this.permission = permission;
+	}
+
 	public String getFilePath() {
 		return filePath;
 	}
@@ -97,12 +115,28 @@ public class SharedFile {
 		this.filePath = filePath;
 	}
 
-	public boolean isDir() {
+	public boolean getIsDir() {
 		return isDir;
 	}
 
-	public void setDir(boolean isDir) {
+	public void setIsDir(boolean isDir) {
 		this.isDir = isDir;
+	}
+
+	public String getSharedPath() {
+		return sharedPath;
+	}
+
+	public void setSharedPath(String sharedPath) {
+		this.sharedPath = sharedPath;
+	}
+
+	public String getUpdatedTime() {
+		return updatedTime;
+	}
+
+	public void setUpdatedTime(String updatedTime) {
+		this.updatedTime = updatedTime;
 	}
 
 	public String getFromDomainId() {
@@ -199,29 +233,5 @@ public class SharedFile {
 
 	public void setToUserName(String toUserName) {
 		this.toUserName = toUserName;
-	}
-
-	public String getSharedPath() {
-		return sharedPath;
-	}
-
-	public void setSharedPath(String sharedPath) {
-		this.sharedPath = sharedPath;
-	}
-
-	public String getUpdatedTime() {
-		return updatedTime;
-	}
-
-	public void setUpdatedTime(String updatedTime) {
-		this.updatedTime = updatedTime;
-	}
-
-	public Permission getPermission() {
-		return permission;
-	}
-
-	public void setPermission(Permission permission) {
-		this.permission = permission;
 	}
 }

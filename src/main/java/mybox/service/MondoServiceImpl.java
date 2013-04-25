@@ -9,13 +9,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import mybox.backend.ParamsUtil;
 import mybox.backend.mondo.Header;
-import mybox.backend.mondo.MondoUtil;
 import mybox.backend.mondo.QueryString;
 import mybox.config.SystemProp;
 import mybox.exception.Error;
 import mybox.exception.ErrorException;
-import mybox.model.DeltaPage;
 import mybox.model.FileEntry;
 import mybox.model.Link;
 import mybox.model.MetadataEntry;
@@ -24,12 +23,12 @@ import mybox.model.mondo.Account;
 import mybox.model.mondo.Group;
 import mybox.model.mondo.MondoUser;
 import mybox.rest.RestClient;
+import mybox.rest.RestClientFactory;
 import mybox.rest.RestResponse;
 import mybox.to.ChunkedUploadParams;
 import mybox.to.CopyParams;
 import mybox.to.CreateParams;
 import mybox.to.DeleteParams;
-import mybox.to.DeltaParams;
 import mybox.to.EntryParams;
 import mybox.to.FileOperationResponse;
 import mybox.to.LinkParams;
@@ -42,9 +41,8 @@ import mybox.to.RevisionParams;
 import mybox.to.SearchParams;
 import mybox.to.ThumbnailParams;
 import mybox.to.UploadParams;
-import mybox.util.EntryUtil;
 import mybox.util.FileUtil;
-import mybox.util.HttpUtil;
+import mybox.util.UrlEncodeUtil;
 
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -59,20 +57,19 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 @Service
-public class MondoServiceImpl implements MondoService {
+public class MondoServiceImpl extends AbstractFileService implements MondoService {
 
 	private static final Logger log = LoggerFactory.getLogger(MondoServiceImpl.class);
 	
 	@Autowired
 	protected SystemProp systemProp;
 	
-	@Autowired
-	private RestClient restClient;
+	private RestClient restClient = RestClientFactory.getRestClient();
 	
 	public MondoUser auth(LoginParams params) {
 		String url = getServiceUrl("auth");
-		String[] headers = HttpUtil.encodedHeaders(Header.AUTH_USER.value(), params.getUsername(), Header.AUTH_PASSWD.value(), params.getPassword());
-		RestResponse<String> restResponse = restClient.post(url, headers);
+		String[] headers = UrlEncodeUtil.encodedHeaders(Header.AUTH_USER.value(), params.getUsername(), Header.AUTH_PASSWD.value(), params.getPassword());
+		RestResponse<String> restResponse = restClient.post(url, "", headers);
 		
 		String token = restResponse.getHeader(Header.AUTH_TOKEN.value());
 		log.debug("token: {}", token);
@@ -89,7 +86,7 @@ public class MondoServiceImpl implements MondoService {
 	
 	public Account getAccount(String token) {
 		String url = getServiceUrl("account/info");
-		String[] headers = HttpUtil.encodedHeaders(Header.AUTH_TOKEN.value(), token);
+		String[] headers = UrlEncodeUtil.encodedHeaders(Header.AUTH_TOKEN.value(), token);
 		Account account = restClient.get(Account.class, url, headers);
 		customGroups(account.getGroups());
 		return account;
@@ -162,7 +159,7 @@ public class MondoServiceImpl implements MondoService {
 		String[] headers = getSignedHeaders(user, Header.GROUP_ID.value(), root);
 		
 		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
-		EntryUtil.customEntries(space, entry);
+		customEntries(space, entry);
 		return entry;
 	}
 
@@ -171,19 +168,19 @@ public class MondoServiceImpl implements MondoService {
 		Space space = getSpace(params);
 		String root = params.getRoot();
 		String path = params.getPath();
-		String[] qryStr = params.getParamArray();
+		String[] qryStr = ParamsUtil.getQueryString(params);
 		
 		String url = getServiceUrl("metadata" + path, qryStr);
 		String[] headers = getSignedHeaders(user, Header.GROUP_ID.value(), root);
 		
 		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
-		EntryUtil.customEntries(space, entry);
+		customEntries(space, entry);
 		return entry;
 	}
 
 	public MetadataEntry getFolders(MetadataParams params) {
 		MetadataEntry parentEntry = getFiles(params);
-		List<MetadataEntry> folderEntries = EntryUtil.getFolders(parentEntry.getContents());
+		List<MetadataEntry> folderEntries = getFolders(parentEntry.getContents());
 		parentEntry.setContents(folderEntries);
 		return parentEntry;
 	}
@@ -194,7 +191,7 @@ public class MondoServiceImpl implements MondoService {
 		String path = params.getPath();
 		InputStream is = params.getContent();
 		long length = params.getLength();
-		String[] qryStr = params.getParamArray();
+		String[] qryStr = ParamsUtil.getQueryString(params);
 
 		String url = getServiceUrl("files_put" + path, qryStr);
 		String[] headers = getSignedHeaders(user, Header.GROUP_ID.value(), root);
@@ -208,20 +205,20 @@ public class MondoServiceImpl implements MondoService {
 		MondoUser user = getUser(params);
 		String root = params.getRoot();
 		String path = params.getPath();
-		String[] qryStr = params.getParamArray();
+		String[] qryStr = ParamsUtil.getQueryString(params);
 
 		String url = getServiceUrl("files" + path, qryStr);
 		String[] headers = getSignedHeaders(user, Header.GROUP_ID.value(), root);
 
 		RestResponse<InputStream> restResponse = restClient.getStream(url, headers);
-		FileEntry entry = EntryUtil.convertDownloadResponse(restResponse, "x-mondo-metadata");
+		FileEntry entry = convertDownloadResponse(restResponse, "x-mondo-metadata");
 		return entry;
 	}
 
 	public FileOperationResponse createFolder(CreateParams params) {
 		MondoUser user = getUser(params);
 		String root = params.getRoot();
-		List<String> fields = params.getParamList();
+		List<String> fields = ParamsUtil.getParamList(params);
 		
 		String url = getServiceUrl("fileops/create_folder");
 		String[] headers = getSignedHeaders(user, Header.GROUP_ID.value(), root);
@@ -251,39 +248,6 @@ public class MondoServiceImpl implements MondoService {
 		return entities;
 	}
 	
-	protected void customGroups(List<Group> groups) {
-		if (groups == null || groups.size() <= 0) {
-			return;
-		}
-		for (Group group: groups) {
-			customGroup(group);
-		}
-	}
-
-	protected void customGroup(Group group) {
-		group.setRoot("/");
-		
-		int expire = group.getExpiration();
-		DateTime date = new DateTime(expire * 1000L);
-		group.setExpiryDate(date.toString());
-	}
-	
-	protected void customEntry(MetadataEntry entry) {
-		EntryUtil.customEntry(entry);
-		
-		String modified = entry.getModified();
-		if (modified == null || modified.equals("")) {
-			return;
-		}
-		
-		entry.setModified(modified);
-		// modified data format: 1355367079.39390
-		//Double dTime = Double.parseDouble(modified);
-		//Long lTime = Math.round(dTime * 1000L);
-		//DateTime date = new DateTime(lTime);
-		//entry.setModified(date.toString());
-	}
-	
 	protected MondoUser getUser(Params params) {
 		MondoUser user = (MondoUser) params.getUser();
 		return user;
@@ -294,9 +258,9 @@ public class MondoServiceImpl implements MondoService {
 		String port = null; // TODO
 		StringBuilder buf = new StringBuilder();
 		buf.append("http://").append(ip).append(":").append(port)
-			.append("/").append(getVersion()).append("/").append(MondoUtil.encodeUrl(resource));
+			.append("/").append(getVersion()).append("/").append(UrlEncodeUtil.encodeUrl(resource));
 		if (qryStr != null && qryStr.length > 0) {
-			buf.append("?").append(HttpUtil.encodeQueryString(qryStr));
+			buf.append("?").append(UrlEncodeUtil.encodeQueryString(qryStr));
 		}
 		return buf.toString();
 	}
@@ -313,12 +277,6 @@ public class MondoServiceImpl implements MondoService {
 
 	@Override
 	public MetadataEntry chunkedUpload(ChunkedUploadParams params) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public DeltaPage<MetadataEntry> delta(DeltaParams params) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -369,5 +327,38 @@ public class MondoServiceImpl implements MondoService {
 	public List<FileOperationResponse> copy(CopyParams params) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	protected void customGroups(List<Group> groups) {
+		if (groups == null || groups.size() <= 0) {
+			return;
+		}
+		for (Group group: groups) {
+			customGroup(group);
+		}
+	}
+
+	protected void customGroup(Group group) {
+		group.setRoot("/");
+		
+		int expire = group.getExpiration();
+		DateTime date = new DateTime(expire * 1000L);
+		group.setExpiryDate(date.toString());
+	}
+	
+	protected void customEntry(MetadataEntry entry) {
+		super.customEntry(entry);
+		
+		String modified = entry.getModified();
+		if (modified == null || modified.equals("")) {
+			return;
+		}
+		
+		entry.setModified(modified);
+		// modified data format: 1355367079.39390
+		//Double dTime = Double.parseDouble(modified);
+		//Long lTime = Math.round(dTime * 1000L);
+		//DateTime date = new DateTime(lTime);
+		//entry.setModified(date.toString());
 	}
 }

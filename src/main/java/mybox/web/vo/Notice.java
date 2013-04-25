@@ -2,43 +2,76 @@ package mybox.web.vo;
 
 public class Notice {
 	
-	// refer to pnotify NotifyType = {NOTICE:'notice', INFO:'info', SUCCESS:'success', ERROR:'error'}
-	public static final String INFO = "info";
+	public static final int INFO = 1;
 	
-	public static final String SUCCESS = "success";
+	public static final int SUCCESS = 2;
 	
-	public static final String ERROR = "error";
+	public static final int WARNING = 3;
 	
-	private String type;
+	public static final int ERROR = 4;
+	
+	private int type;
 	
 	private String message;
 	
 	public Notice() {
 	}
 	
-	public Notice(String type) {
+	public Notice(int type) {
 		this.type = type;
 	}
 
-	public Notice(String type, String message) {
+	public Notice(int type, String message) {
 		this.type = type;
 		this.message = message;
-	}
-	
-	public static Notice info() {
-		return new Notice(INFO, "");
 	}
 	
 	public static Notice info(String message) {
 		return new Notice(INFO, message);
 	}
 	
-	public static Notice error() {
-		return new Notice(ERROR, "");
+	public static Notice success(String message) {
+		return new Notice(SUCCESS, message);
+	}
+	
+	public static Notice warning(String message) {
+		return new Notice(WARNING, message);
 	}
 	
 	public static Notice error(String message) {
 		return new Notice(ERROR, message);
+	}
+	
+	public boolean isInfo() {
+		if (type == INFO) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	public boolean isSuccess() {
+		if (type == SUCCESS) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	public boolean isWarning() {
+		if (type == WARNING) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	public boolean isError() {
+		if (type == ERROR) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 	public String toString() {
@@ -48,11 +81,11 @@ public class Notice {
 		return buf.toString();
 	}
 
-	public String getType() {
+	public int getType() {
 		return type;
 	}
 
-	public void setType(String type) {
+	public void setType(int type) {
 		this.type = type;
 	}
 

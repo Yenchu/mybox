@@ -4,10 +4,10 @@ import java.util.List;
 
 import mybox.SpringUnitTest;
 import mybox.backend.dropbox.DropboxUtil;
-import mybox.model.DeltaPage;
 import mybox.model.Link;
 import mybox.model.MetadataEntry;
 import mybox.model.User;
+import mybox.model.dropbox.DeltaPage;
 import mybox.model.dropbox.DropboxUser;
 import mybox.service.DropboxService;
 import mybox.to.CreateParams;

@@ -7,27 +7,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import mybox.backend.filecruiser.ContentType;
+import mybox.backend.MetadataListResponseHandler;
+import mybox.backend.ParamsUtil;
+import mybox.backend.PathUtil;
+import mybox.backend.filecruiser.FileCruiserRestResponseValidator;
+import mybox.backend.filecruiser.FileCruiserUtil;
 import mybox.backend.filecruiser.Header;
 import mybox.backend.filecruiser.Resource;
+import mybox.config.SystemProp;
 import mybox.exception.Error;
 import mybox.exception.ErrorException;
-import mybox.json.JsonConverter;
-import mybox.model.DeltaPage;
 import mybox.model.FileEntry;
 import mybox.model.Link;
 import mybox.model.MetadataEntry;
 import mybox.model.Space;
+import mybox.model.filecruiser.DeltaPage;
 import mybox.model.filecruiser.FileCruiserSpace;
 import mybox.model.filecruiser.FileCruiserUser;
 import mybox.model.filecruiser.SharedFile;
 import mybox.model.filecruiser.SharingFile;
-import mybox.model.keystone.Auth;
 import mybox.model.keystone.Project;
-import mybox.model.keystone.Token;
-import mybox.model.keystone.User;
+import mybox.rest.RestClient;
+import mybox.rest.RestClientFactory;
 import mybox.rest.RestResponse;
-import mybox.task.HttpPostWorker;
+import mybox.task.FileCruiserHttpPostWorker;
 import mybox.to.BulkParams;
 import mybox.to.ChunkedUploadParams;
 import mybox.to.CopyParams;
@@ -46,73 +49,45 @@ import mybox.to.RevisionParams;
 import mybox.to.SearchParams;
 import mybox.to.ThumbnailParams;
 import mybox.to.UploadParams;
-import mybox.util.EntryUtil;
 import mybox.util.FileUtil;
-import mybox.util.ParamsUtil;
 
-import org.apache.commons.lang3.StringUtils;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-public class FileCruiserServiceImpl extends AbstractBackendService implements FileCruiserService {
+public class FileCruiserServiceImpl extends AbstractFileService implements FileCruiserService {
 	
 	private static final Logger log = LoggerFactory.getLogger(FileCruiserServiceImpl.class);
 	
 	@Autowired
-	private UserService userService;
+	private SystemProp systemProp;
 
 	@Autowired
-	private HttpPostWorker httpPostWorker;
+	protected UserService userService;
 	
-	//* for test
-	private List<SharedFile> sharedFiles = new ArrayList<SharedFile>();
+	@Autowired
+	private EndpointService endpointService;
 	
-	public Project getProject(FileCruiserUser user, String projectId) {
-		String token = user.getToken();
-		String resource = buildPath(Resource.PROJECTS, projectId);
-		String url = getUserUrl(resource);
-		Project project = this.get(url, token, Project.class, true);
-		return project;
+	@Autowired
+	private FileCruiserHttpPostWorker httpPostWorker;
+
+	private RestClient restClient;
+	
+	private FileCruiserRestResponseValidator restResponseValidator;
+	
+	private MetadataListResponseHandler metadataListResponseHandler;
+	
+	public FileCruiserServiceImpl() {
+		restResponseValidator = new FileCruiserRestResponseValidator();
+		restClient = RestClientFactory.getRestClient(restResponseValidator);
+		metadataListResponseHandler = new MetadataListResponseHandler(restResponseValidator);
 	}
-	
+
 	@Override
 	public FileCruiserUser auth(LoginParams params) {
-		String url = getUserUrl(Resource.TOKENS);
-		String[] headers = {Header.CONTENT_TYPE, ContentType.JSON};
-		
-		String domainName = params.getDomain();
-		if (StringUtils.isBlank(domainName)) {
-			//* for test only
-			domainName = systemProp.getDefaultDomain();
-		}
-		
-		Auth auth = new Auth(domainName, params.getUsername(), params.getPassword());
-		String body = JsonConverter.toJson(auth, true);
-		log.debug("authUrl: {}  body: {}", url, body);
-		
-		RestResponse<String> restResponse = restClient.post(url, body, headers);
-		Token token = JsonConverter.fromJson(restResponse.getBody(), Token.class, true);
-		String tokenValue = restResponse.getHeader(Header.X_SUBJECT_TOKEN);
-		log.debug("authToken: {}  resp: {}", tokenValue, token);
-		
-		DateTimeFormatter fmt = ISODateTimeFormat.dateTime();
-		DateTime dt = fmt.parseDateTime(token.getExpiresAt());
-		
-		FileCruiserUser user = new FileCruiserUser();
-		user.setToken(tokenValue);
-		user.setExpiresAt(dt.toDate());
-		user.setId(token.getUser().getId());
-		user.setName(token.getUser().getName());
-		user.setIp(params.getIp());
-		user.setDomainId(token.getUser().getDomain().getId());
-		user.setDomainName(token.getUser().getDomain().getName());
-		return user;
+		return userService.auth(params);
 	}
 
 	@Override
@@ -122,16 +97,7 @@ public class FileCruiserServiceImpl extends AbstractBackendService implements Fi
 
 	@Override
 	public Space getSpace(Params params, String spaceId) {
-		FileCruiserUser fcUser = (FileCruiserUser) params.getUser();
-		String projectId;
-		if (StringUtils.isBlank(spaceId)) {
-			User user = userService.getUser(fcUser);
-			projectId = user.getDefaultProjectId();
-		} else {
-			projectId = spaceId;
-		}
-		
-		Project project = getProject(fcUser, projectId);
+		Project project = userService.getProject(params, spaceId);
 		FileCruiserSpace space = new FileCruiserSpace();
 		space.setProject(project);
 		space.setRoot("/");
@@ -145,109 +111,64 @@ public class FileCruiserServiceImpl extends AbstractBackendService implements Fi
 
 	@Override
 	public MetadataEntry getFiles(PathParams params) {
+		FileCruiserUser user = (FileCruiserUser) params.getUser();
 		Space space = getSpace(params);
 		String path = params.getPath();
 		
-		String resource = buildPath(Resource.METADATA, path);
-		String url = getFileUrl(resource);
+		String resource = PathUtil.buildPath(Resource.METADATA, path);
+		String url = getFileServiceUrl(resource);
+		String[] headers = FileCruiserUtil.getHeaders(user.getToken());
 		
-		MetadataEntry entry = this.get(url, MetadataEntry.class);
-		EntryUtil.customEntries(space, entry);
-		log.debug("entry: {}", entry);
+		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
+		customEntries(space, entry);
+		log.debug("metadata: {}", entry);
 		return entry;
 	}
 
 	@Override
 	public MetadataEntry getFiles(MetadataParams params) {
+		FileCruiserUser user = (FileCruiserUser) params.getUser();
 		Space space = getSpace(params);
 		String path = params.getPath();
-		if (path.equals("/")) {
-			path += "."; //* just a workaround for backend defact
-		}
 		String[] qryStr = ParamsUtil.getQueryString(params);
 		
-		String resource = buildPath(Resource.METADATA, path);
-		String url = getFileUrl(resource, qryStr);
+		String resource = PathUtil.buildPath(Resource.METADATA, path);
+		String url = getFileServiceUrl(resource, qryStr);
+		String[] headers = FileCruiserUtil.getHeaders(user.getToken());
+		log.debug("getFileUrl: {}", url);
 		
-		MetadataEntry entry = this.get(url, MetadataEntry.class);
-		EntryUtil.customEntries(space, entry);
-		log.debug("entry: {}", entry);
+		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
+		customEntries(space, entry);
+		log.debug("metadata: {}", entry);
 		return entry;
 	}
 
 	@Override
 	public MetadataEntry getFolders(MetadataParams params) {
 		MetadataEntry parentEntry = getFiles(params);
-		List<MetadataEntry> folderEntries = EntryUtil.getFolders(parentEntry.getContents());
+		List<MetadataEntry> folderEntries = getFolders(parentEntry.getContents());
 		parentEntry.setContents(folderEntries);
 		return parentEntry;
 	}
 
 	@Override
 	public FileEntry download(EntryParams params) {
+		FileCruiserUser user = (FileCruiserUser) params.getUser();
 		String path = params.getPath();
 		String[] qryStr = ParamsUtil.getQueryString(params);
 
-		String resource = buildPath(Resource.FILES, path);
-		String url = getFileUrl(resource, qryStr);
-		String[] headers = getHeaders(getAdminToken());
+		String resource = PathUtil.buildPath(Resource.FILES, path);
+		String url = getFileServiceUrl(resource, qryStr);
+		String[] headers = FileCruiserUtil.getHeaders(user.getToken());
 		log.debug("downloadUrl: {}", url);
 
 		RestResponse<InputStream> restResponse = restClient.getStream(url, headers);
-		log.debug("resp: {}", restResponse);
-		FileEntry entry = EntryUtil.convertDownloadResponse(restResponse, "X-Dropbox-Metadata");
+		FileEntry entry = convertDownloadResponse(restResponse, Header.X_METATADA);
 		return entry;
 	}
 
 	@Override
 	public InputStream getThumbnail(ThumbnailParams params) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public MetadataEntry upload(UploadParams params) {
-		String path = params.getPath();
-		InputStream is = params.getContent();
-		long length = params.getLength();
-		String[] qryStr = ParamsUtil.getQueryString(params);
-
-		String resource = buildPath(Resource.FILES, path);
-		String url = getFileUrl(resource, qryStr);
-		String[] headers = getHeaders(getAdminToken());
-		log.debug("uploadUrl: {}", url);
-
-		MetadataEntry entry = restClient.post(MetadataEntry.class, url, is, length, headers);
-		customEntry(entry);
-		return entry;
-	}
-
-	@Override
-	public MetadataEntry chunkedUpload(ChunkedUploadParams params) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public DeltaPage<MetadataEntry> delta(DeltaParams params) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public List<MetadataEntry> getRevisions(RevisionParams params) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public MetadataEntry restore(EntryParams params) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Link link(LinkParams params) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -259,31 +180,178 @@ public class FileCruiserServiceImpl extends AbstractBackendService implements Fi
 	}
 
 	@Override
-	public List<MetadataEntry> search(SearchParams params) {
+	public MetadataEntry upload(UploadParams params) {
+		FileCruiserUser user = (FileCruiserUser) params.getUser();
+		String path = params.getPath();
+		InputStream is = params.getContent();
+		long length = params.getLength();
+		String[] qryStr = ParamsUtil.getQueryString(params);
+
+		String resource = PathUtil.buildPath(Resource.FILES, path);
+		String url = getFileServiceUrl(resource, qryStr);
+		String[] headers = FileCruiserUtil.getHeaders4Upload(user.getToken());
+		log.debug("uploadUrl: {}", url);
+
+		MetadataEntry entry = restClient.post(MetadataEntry.class, url, is, length, headers);
+		customEntry(entry);
+		log.debug("upload metadata: {}", entry);
+		return entry;
+	}
+
+	@Override
+	public MetadataEntry chunkedUpload(ChunkedUploadParams params) {
 		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public DeltaPage delta(DeltaParams params) {
+		FileCruiserUser user = (FileCruiserUser) params.getUser();
+		String[] headers = FileCruiserUtil.getHeaders(user.getToken());
+		DeltaPage deltaPage = getDelta(params, headers);
+		log.debug("deltaPage: {}", deltaPage);
+		return deltaPage;
+	}
+
+	protected DeltaPage getDelta(DeltaParams params, String[] headers) {
+		String[] qryStr = ParamsUtil.getQueryString(params);
+		String url = getFileServiceUrl(Resource.DELTA, qryStr);
+		log.debug("deltaUrl: {}", url);
+		
+		DeltaPage deltaPage = restClient.post(DeltaPage.class, url, headers);
+		if (deltaPage.isHasMore()) {
+			log.debug("Has delta more than {}", deltaPage.getEntries().size());
+			params.setCursor(deltaPage.getCursor());
+			DeltaPage nextPage = getDelta(params, headers);
+			nextPage.getEntries().addAll(deltaPage.getEntries());
+			return nextPage;
+		} else {
+			return deltaPage;
+		}
+	}
+
+	@Override
+	public List<MetadataEntry> search(SearchParams params) {
+		FileCruiserUser user = (FileCruiserUser) params.getUser();
+		String path = params.getPath();
+		String[] qryStr = ParamsUtil.getQueryString(params);
+		
+		String resource = PathUtil.buildPath(Resource.SEARCH, path);
+		String url = getFileServiceUrl(resource, qryStr);
+		String[] headers = FileCruiserUtil.getHeaders(user.getToken());
+		log.debug("searchUrl: {}", url);
+		
+		List<MetadataEntry> entries = restClient.post(metadataListResponseHandler, url, null, headers);
+		customEntries(entries);
+		log.debug("search metadata: {}", entries);
+		return entries;
+	}
+
+	@Override
+	public List<MetadataEntry> getRevisions(RevisionParams params) {
+		FileCruiserUser user = (FileCruiserUser) params.getUser();
+		String path = params.getPath();
+
+		String resource = PathUtil.buildPath(Resource.REVISIONS, path);
+		String url = getFileServiceUrl(resource);
+		String[] headers = FileCruiserUtil.getHeaders(user.getToken());
+		log.debug("getRevisionsdUrl: {}", url);
+
+		List<MetadataEntry> entries = restClient.get(metadataListResponseHandler, url, headers);
+		customEntries(entries);
+		log.debug("revision metadata: {}", entries);
+		return entries;
+	}
+
+	@Override
+	public MetadataEntry restore(EntryParams params) {
+		FileCruiserUser user = (FileCruiserUser) params.getUser();
+		String path = params.getPath();
+		String[] qryStr = ParamsUtil.getQueryString(params);
+
+		String resource = PathUtil.buildPath(Resource.RESTORE, path);
+		String url = getFileServiceUrl(resource, qryStr);
+		String[] headers = FileCruiserUtil.getHeaders(user.getToken());
+		log.debug("restoreUrl: {}", url);
+
+		MetadataEntry entry = restClient.post(MetadataEntry.class, url, headers);
+		customEntry(entry);
+		log.debug("restore metadata: {}", entry);
+		return entry;
+	}
+
+	@Override
+	public Link link(LinkParams params) {
+		FileCruiserUser user = (FileCruiserUser) params.getUser();
+		String path = params.getPath();
+		String[] qryStr = ParamsUtil.getQueryString(params);
+
+		String resource = PathUtil.buildPath(Resource.SHARE_LINK, path);
+		String url = getFileServiceUrl(resource, qryStr);
+		String[] headers = FileCruiserUtil.getHeaders(user.getToken());
+		log.debug("linkUrl: {}", url);
+
+		Link link = restClient.post(Link.class, url, headers);
+		log.debug("link: {}", link);
+		String privateUrl = link.getUrl();
+		int idx = privateUrl.indexOf("/links");
+		String linkPath = privateUrl.substring(idx);
+		String portalUrl = getUserPortalUrl();
+		String publicUrl = PathUtil.buildPath(portalUrl, "/fc", linkPath);
+		link.setUrl(publicUrl);
+		return link;
+	}
+	
+	public FileEntry getLink(EntryParams params) {
+		String path = params.getPath();
+		String[] qryStr = ParamsUtil.getQueryString(params);
+
+		String resource = PathUtil.buildPath(Resource.LINKS, path);
+		String url = getFileServiceUrlWoVersion(resource, qryStr); //* getFileServiceUrlWoVersion for test
+		log.debug("getLinkUrl: {}", url);
+
+		RestResponse<InputStream> restResponse = restClient.getStream(url);
+		FileEntry entry = convertDownloadResponse(restResponse, Header.X_METATADA);
+		
+		MetadataEntry metadata = entry.getMetadata();
+		if (metadata.getIsDir()) {
+			resource = PathUtil.buildPath(Resource.METADATA, metadata.getPath());
+			url = getFileServiceUrl(resource);
+			String token = systemProp.getAdminToken(); //* for test
+			String[] headers = FileCruiserUtil.getHeaders(token);
+			
+			metadata = restClient.get(MetadataEntry.class, url, headers);
+			customEntries(metadata);
+			log.debug("metadata: {}", metadata);
+			entry.setMetadata(metadata);
+		}
+		return entry;
+	}
+	
+	public List<Link> getLinkes() {
+		// new API, not impl.
 		return null;
 	}
 	
 	public SharedFile share(Params params, SharingFile sharingFile) {
 		FileCruiserUser user = (FileCruiserUser) params.getUser();
-		String toUseId = sharingFile.getUserId();
-		User toUser = userService.getUser(toUseId);
-		
-		SharedFile sharedFile = new SharedFile();
-		return sharedFile;
+		String url = getFileServiceUrl(Resource.SHARE_FILE);
+		String[] headers = FileCruiserUtil.getHeaders(user.getToken());
+		log.debug("shareUrl: {}", url);
+		//restClient.post(url, headers, sharingFile, SharingFile.class, false);
+		return null;
 	}
 	
 	public List<SharedFile> getShares(PathParams params) {
-		return sharedFiles;
+		return null;
 	}
 
 	@Override
 	public FileOperationResponse createFolder(CreateParams params) {
+		FileCruiserUser user = (FileCruiserUser) params.getUser();
 		String[] qryStr = ParamsUtil.getQueryString(params);
 		
-		String resource = buildPath(Resource.CREATE_FOLDER);
-		String url = getFileUrl(resource, qryStr);
-		String[] headers = getHeaders(getAdminToken());
+		String url = getFileServiceUrl(Resource.CREATE_FOLDER, qryStr);
+		String[] headers = FileCruiserUtil.getHeaders(user.getToken());
 		log.debug("createFolderUrl: {}", url);
 		
 		MetadataEntry entry = restClient.post(MetadataEntry.class, url, headers);
@@ -292,39 +360,42 @@ public class FileCruiserServiceImpl extends AbstractBackendService implements Fi
 		String name = FileUtil.getNameFromPath(params.getPath());
 		FileOperationResponse resp = new FileOperationResponse(name);
 		resp.setMetadata(entry);
+		log.debug("creating folder metadata: {}", entry);
 		return resp;
 	}
 
 	@Override
 	public List<FileOperationResponse> delete(DeleteParams params) {
-		String url = getFileUrl(Resource.DELETE_FILE);
-		return post(params, url);
+		List<List<String>> fieldsList = ParamsUtil.getParamList(params);
+		return post(Resource.DELETE_FILE, params, fieldsList);
 	}
 
 	@Override
 	public List<FileOperationResponse> move(MoveParams params) {
-		String url = getFileUrl(Resource.MOVE_FILE);
-		return post(params, url);
+		List<List<String>> fieldsList = ParamsUtil.getParamList(params);
+		return post(Resource.MOVE_FILE, params, fieldsList);
 	}
 
 	@Override
 	public List<FileOperationResponse> copy(CopyParams params) {
-		String url = getFileUrl(Resource.COPY_FILE);
-		return post(params, url);
+		List<List<String>> fieldsList = ParamsUtil.getParamList(params);
+		return post(Resource.COPY_FILE, params, fieldsList);
 	}
 	
-	protected List<FileOperationResponse> post(BulkParams params, String url) {
-		List<List<String>> fieldsList = params.getParamList();
+	protected List<FileOperationResponse> post(String resource, BulkParams params, List<List<String>> fieldsList) {
 		if (fieldsList == null || fieldsList.size() < 1) {
 			throw new ErrorException(Error.badRequest("No any selected files!"));
 		}
-
-		String[] headers = getHeaders(getAdminToken());
+		
+		FileCruiserUser user = (FileCruiserUser) params.getUser();
+		String[] headers = FileCruiserUtil.getHeaders(user.getToken());
 		Map<String, Future<MetadataEntry>> futures = new LinkedHashMap<String, Future<MetadataEntry>>();
 		String[] paths = params.getPaths();
 		for (int i = 0, size = fieldsList.size(); i < size; i++) {
-			List<String> fields = fieldsList.get(i);
-			Future<MetadataEntry> future = httpPostWorker.work(url, fields, headers);
+			List<String> qryStr = fieldsList.get(i);
+			String url = getFileServiceUrl(resource, qryStr.toArray(new String[qryStr.size()]));
+			log.debug("fileOpUrl: {}", url);
+			Future<MetadataEntry> future = httpPostWorker.work(url, headers);
 			String path = paths[i];
 			futures.put(path, future);
 		}
@@ -339,6 +410,7 @@ public class FileCruiserServiceImpl extends AbstractBackendService implements Fi
 				MetadataEntry entry = future.get();
 				customEntry(entry);
 				resp.setMetadata(entry);
+				log.debug("file operation metadata: {}", entry);
 			} catch (ErrorException e) {
 				resp.setError(e.getMessage());
 			} catch (Exception e) {
@@ -352,7 +424,7 @@ public class FileCruiserServiceImpl extends AbstractBackendService implements Fi
 	}
 	
 	protected void customEntry(MetadataEntry entry) {
-		EntryUtil.customEntry(entry);
+		super.customEntry(entry);
 		
 		String modified = entry.getModified();
 		if (modified == null || modified.equals("")) {
@@ -365,5 +437,26 @@ public class FileCruiserServiceImpl extends AbstractBackendService implements Fi
 			modified = modified.substring(0, idx - 1);
 			entry.setModified(modified);
 		}		
+	}
+	
+	protected String getFileServiceUrl(String resource, String... qryStr) {
+		String fileServiceBaseUrl = endpointService.getFileServiceUrl();
+		String url = PathUtil.getUrl(fileServiceBaseUrl, resource, qryStr);
+		return url;
+	}
+	
+	protected String getFileServiceUrlWoVersion(String resource, String... qryStr) {
+		String fileServiceBaseUrl = endpointService.getFileServiceUrl();
+		int idx = fileServiceBaseUrl.lastIndexOf("/v1");
+		if (idx > 0) {
+			fileServiceBaseUrl = fileServiceBaseUrl.substring(0, idx);
+		}
+		String url = PathUtil.getUrl(fileServiceBaseUrl, resource, qryStr);
+		return url;
+	}
+	
+	protected String getUserPortalUrl() {
+		return systemProp.getUserPortalUrl(); //* for test
+		//return endpointService.getUserPortalUrl();
 	}
 }

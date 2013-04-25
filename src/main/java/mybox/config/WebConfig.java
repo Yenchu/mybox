@@ -2,8 +2,10 @@ package mybox.config;
 
 import java.util.List;
 
+import mybox.service.UserService;
 import mybox.web.interceptor.AppInterceptor;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +38,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @ComponentScan(basePackages = "mybox.web.controller")
 public class WebConfig extends WebMvcConfigurerAdapter {
 	
+	@Autowired
+	private UserService userService;
+	
 	@Override
 	public void addArgumentResolvers(List<HandlerMethodArgumentResolver> argumentResolvers) {
 		PageableArgumentResolver resolver = new PageableArgumentResolver();
@@ -45,7 +50,9 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 	
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		registry.addInterceptor(new AppInterceptor());
+		AppInterceptor appInterceptor = new AppInterceptor();
+		appInterceptor.setUserService(userService);
+		registry.addInterceptor(appInterceptor);
 	}
 	
 	@Override

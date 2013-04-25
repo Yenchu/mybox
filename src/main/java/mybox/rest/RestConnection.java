@@ -18,8 +18,6 @@ public interface RestConnection {
 	
 	public RestResponse<String> delete(String url, Map<String, String> queryStr, String... headers);
 	
-	public RestResponse<String> post(String url, String... headers);
-	
 	public RestResponse<String> post(String url, String body, String... headers);
 	
 	public RestResponse<String> post(String uri, List<String> formParams, String... headers);

@@ -1,13 +1,19 @@
 package mybox.to;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import mybox.model.User;
 
 public class LinkParams extends PathParams {
 	
 	private boolean shortUrl = true; //default
+	
+	// extra params for File Cruiser
+	private String expires;
+	
+	private String password;
+	
+	private String emails;
+	
+	private String message;
 
 	public LinkParams() {
 	}
@@ -19,24 +25,6 @@ public class LinkParams extends PathParams {
 	public LinkParams(User user, String root, String path) {
 		super(user, root, path);
 	}
-	
-	public List<String> getParamList() {
-		List<String> params = new ArrayList<String>();
-		if (!shortUrl) {
-			params.add("short_url");
-			params.add("false");
-		}
-		if (locale != null && !"".equals(locale)) {
-			params.add("locale");
-			params.add(locale);
-		}
-		return params;
-	}
-
-	public String[] getParamArray() {
-		List<String> params = getParamList();
-		return params.toArray(new String[params.size()]);
-	}
 
 	public boolean isShortUrl() {
 		return shortUrl;
@@ -44,5 +32,37 @@ public class LinkParams extends PathParams {
 
 	public void setShortUrl(boolean shortUrl) {
 		this.shortUrl = shortUrl;
+	}
+
+	public String getExpires() {
+		return expires;
+	}
+
+	public void setExpires(String expires) {
+		this.expires = expires;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getEmails() {
+		return emails;
+	}
+
+	public void setEmails(String emails) {
+		this.emails = emails;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
 	}
 }

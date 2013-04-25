@@ -20,7 +20,7 @@
 <c:forEach var="css" items="${csses}">
 <tiles:insertAttribute value="${css}" flush="true" />
 </c:forEach>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
 <!--[if IE]><script src="${asset}/js/Placeholders.min.js"></script><![endif]-->
 <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/jquery-ui.min.js"></script>

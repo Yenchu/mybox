@@ -7,9 +7,9 @@ import java.net.URLEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HttpUtil {
+public class UrlEncodeUtil {
 	
-	private static final Logger log = LoggerFactory.getLogger(HttpUtil.class);
+	private static final Logger log = LoggerFactory.getLogger(UrlEncodeUtil.class);
 
 	public static String[] encodedHeaders(String... headers) {
 		String[] encodedHeaders = null;
@@ -28,12 +28,8 @@ public class HttpUtil {
 		for (int i = 0; i < headers.length; i += 2) {
 			String header = headers[i];
 			String value = headers[i + 1];
-			if (value == null) {
-				log.info("Header {} doesn't have value!", header);
-				continue;
-			}
 			encodedHeaders[i] = header;
-			encodedHeaders[i + 1] = encodeUrl(value);
+			encodedHeaders[i + 1] = encode(value);
 		}
 	}
 	
@@ -51,15 +47,21 @@ public class HttpUtil {
 				} else {
 					buf.append("&");
 				}
-				String name = encodeUrl(qryStr[i]);
-				String value = encodeUrl(qryStr[i + 1]);
+				String name = encode(qryStr[i]);
+				String value = encode(qryStr[i + 1]);
 				buf.append(name).append("=").append(value);
 			}
 		}
 		return buf.toString();
 	}
-	
+
 	public static String encodeUrl(String str) {
+		String encodedStr = encode(str);
+		encodedStr = encodedStr.replace("%2F", "/").replace("+", "%20").replace("*", "%2A");
+		return encodedStr;
+	}
+	
+	public static String encode(String str) {
 		try {
 			return URLEncoder.encode(str, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
@@ -68,29 +70,12 @@ public class HttpUtil {
 		}
 	}
 
-	public static String decodeUrl(String str) {
+	public static String decode(String str) {
 		try {
 			return URLDecoder.decode(str, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			log.error(e.getMessage(), e);
 			return str;
 		}
-	}
-	
-	
-	/**
-	 * Tomcat servlet container uses ISO-8859-1 to decode URL.
-	 * @param id
-	 * @return
-	 */
-	public static String toUTF8(String encodedStr) {
-		String str = null;
-		try {
-			str = new String(encodedStr.getBytes("ISO-8859-1"), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			log.error(e.getMessage(), e);
-			str = encodedStr;
-		}
-		return str;
 	}
 }
