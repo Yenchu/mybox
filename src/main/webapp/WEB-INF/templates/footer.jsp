@@ -4,7 +4,7 @@
 	<div class="row-fluid">
 		<div class="span2"></div>
 		<div class="span8" style="text-align:center; padding-top:12px">
-			<div>Copyright &copy; 2013 PROMISE Technology, Inc. All rights reserved.</div>
+			<div></div>
 		</div>
 		<div class="span2"></div>
 	</div>

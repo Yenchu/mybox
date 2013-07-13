@@ -41,7 +41,7 @@ public class AuthController extends BaseController {
 	public enum ServiceType {
 
 		// default service type is empty
-		DISK("dk"), DROPBOX("db"), FILECRUISER("fc");
+		DISK("dk"), DROPBOX("db");
 		
 		private final String value;
 		

@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="">
 <meta name="author" content="">
-<title>File Cruiser</title>
+<title>My Box</title>
 <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/css/bootstrap-combined.min.css" rel="stylesheet">
 <link href='//ajax.googleapis.com/ajax/libs/jqueryui/1.10.2/themes/cupertino/jquery-ui.css' rel="stylesheet">
 <link href="${asset}/font-awesome/css/font-awesome.min.css" rel="stylesheet">

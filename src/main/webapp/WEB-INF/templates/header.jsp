@@ -8,7 +8,7 @@
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			</a>
-			<a class="brand" href="#">File Cruiser</a>
+			<a class="brand" href="#">My Box</a>
 			<div class="nav-collapse collapse">
 				<ul class="nav">
 					<li id="topnav-home"><a href="${service}/">Home</a></li>
