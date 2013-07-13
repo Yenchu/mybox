@@ -10,3 +10,8 @@
 /.settings
 /.classpath
 /.project
+target
+.settings/*
+!.settings/.jsdtscope
+.project
+.classpath
