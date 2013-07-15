@@ -5,7 +5,7 @@
 	<artifactId>mybox</artifactId>
 	<packaging>war</packaging>
 	<version>1.0</version>
-	<name>demo</name>
+	<name>mybox</name>
 	<repositories>
 		<repository>
 			<id>eap</id>
