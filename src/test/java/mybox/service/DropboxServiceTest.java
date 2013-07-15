@@ -43,7 +43,7 @@ public class DropboxServiceTest extends SpringUnitTest {
 		DropboxUtil.auth();
 	}
 	
-	@Test
+	//@Test
 	public void getFiles() {
 		User user = new User();
 		String root = "dropbox";
@@ -53,7 +53,7 @@ public class DropboxServiceTest extends SpringUnitTest {
 		log.debug("file: {}", entry);
 	}
 	
-	@Test
+	//@Test
 	public void getFilesIncludeDeleted() {
 		User user = new User();
 		String root = "dropbox";
@@ -66,7 +66,7 @@ public class DropboxServiceTest extends SpringUnitTest {
 		log.debug("\n{}", entry);
 	}
 	
-	@Test
+	//@Test
 	public void createFolder() {
 		String space = "dropbox";
 		String path = "/Doc/newFolder/folder_1";
@@ -76,7 +76,7 @@ public class DropboxServiceTest extends SpringUnitTest {
 		log.debug("create folder: {}", resp);
 	}
 	
-	@Test
+	//@Test
 	public void delta() {
 		String cursor = null;
 		User user = getUser();
@@ -87,7 +87,7 @@ public class DropboxServiceTest extends SpringUnitTest {
 		log.debug("delta: {}", entry);
 	}
 	
-	@Test
+	//@Test
 	public void getRevisions() {
 		String space = "dropbox";
 		String path = "/Lighthouse.jpg";
@@ -99,7 +99,7 @@ public class DropboxServiceTest extends SpringUnitTest {
 		}
 	}
 	
-	@Test
+	//@Test
 	public void restore() {
 		String space = "dropbox";
 		String path = "/Lighthouse.jpg";
@@ -111,7 +111,7 @@ public class DropboxServiceTest extends SpringUnitTest {
 		log.debug("restore file: {}", entry);
 	}
 	
-	@Test
+	//@Test
 	public void link() {
 		String space = "dropbox";
 		String path = "/Test";
@@ -122,7 +122,7 @@ public class DropboxServiceTest extends SpringUnitTest {
 		log.debug("link: {}", link);
 	}
 	
-	@Test
+	//@Test
 	public void media() {
 		String space = "dropbox";
 		String path = "/Lighthouse.jpg";
@@ -132,7 +132,7 @@ public class DropboxServiceTest extends SpringUnitTest {
 		log.debug("media: {}", link);
 	}
 	
-	@Test
+	//@Test
 	public void search() {
 		String space = "dropbox";
 		String path = "/Test/tmp";

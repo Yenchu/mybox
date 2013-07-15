@@ -15,7 +15,7 @@ public class EmailServiceTest extends SpringUnitTest {
 	@Autowired
 	private EmailService EmailService;
 	
-	@Test
+	//@Test
 	public void sendEmail() {
 		String subject = "Test email";
 		String toEmails = "andrew.chen@tw.promise.com";
