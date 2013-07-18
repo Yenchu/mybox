@@ -19,7 +19,7 @@ public class AuthController extends BaseController {
 
 	private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 	
-	@RequestMapping(value="/db/login")
+	@RequestMapping(value="/login")
 	public String login(@RequestParam(value = "service", required = false) String serviceType, 
 			HttpServletRequest request) {
 		if (StringUtils.isBlank(serviceType)) {
