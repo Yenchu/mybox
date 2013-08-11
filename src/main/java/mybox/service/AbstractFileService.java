@@ -34,11 +34,13 @@ public abstract class AbstractFileService {
 		fileEntry.setContent(content);
 		
 		String metadataStr = restResponse.getHeader(header);
-		log.debug("Get header {}:\n{}", header, metadataStr);
-		MetadataEntry metadataEntry = JsonConverter.fromJson(metadataStr, MetadataEntry.class);
-		customEntry(metadataEntry);
-		fileEntry.setMetadata(metadataEntry);
-		fileEntry.setFileSize(metadataEntry.getBytes());
+		if (metadataStr != null && !"".equals(metadataStr)) {
+			log.debug("Get header {}:\n{}", header, metadataStr);
+			MetadataEntry metadataEntry = JsonConverter.fromJson(metadataStr, MetadataEntry.class);
+			customMetadata(metadataEntry);
+			fileEntry.setMetadata(metadataEntry);
+			fileEntry.setFileSize(metadataEntry.getBytes());
+		}
 
 		String contentType = restResponse.getHeader("Content-Type");
 		if (contentType != null && !"".equals(contentType)) {
@@ -58,7 +60,7 @@ public abstract class AbstractFileService {
 		return fileEntry;
 	}
 	
-	protected void customEntries(Space space, MetadataEntry folderEntry) {
+	protected void customFolderMetadata(Space space, MetadataEntry folderEntry) {
 		if (folderEntry == null) {
 			return;
 		}
@@ -69,36 +71,23 @@ public abstract class AbstractFileService {
 			folderEntry.setName(space.getName());
 			folderEntry.setLocation("");
 		} else {
-			customEntry(folderEntry);
+			customMetadata(folderEntry);
 		}
 		
 		List<MetadataEntry> entries = folderEntry.getContents();
 		if (entries == null || entries.size() <= 0) {
 			return;
 		}
-		customEntries(entries);
+		customMetadata(entries);
 	}
 	
-	protected void customEntries(MetadataEntry folderEntry) {
-		if (folderEntry == null) {
-			return;
-		}
-		customEntry(folderEntry);
-		
-		List<MetadataEntry> entries = folderEntry.getContents();
-		if (entries == null || entries.size() <= 0) {
-			return;
-		}
-		customEntries(entries);
-	}
-	
-	protected void customEntries(List<MetadataEntry> entries) {
+	protected void customMetadata(List<MetadataEntry> entries) {
 		for (MetadataEntry entry: entries) {
-			customEntry(entry);
+			customMetadata(entry);
 		}
 	}
 	
-	protected void customEntry(MetadataEntry entry) {
+	protected void customMetadata(MetadataEntry entry) {
 		//{"hash": "c89bb0d81ea153f4c3c25be81c4e245f", "bytes": 0, "thumb_exists": false, "path": "/", "is_dir": true, 
 		//"icon": "folder_public", "rev": "c89bb0d81ea153f4c3c25be81c4e245f", "modified": "Mon, 01 Apr 2013 23:42:29 +0000", "size": "0 Bytes", "root": "File Cruiser" 
 		//"contents": [{"size": "1.0 MB", "store_size": "1.0 MB", "encrypt": false, "rev": "303b7c009b01907f563749361efe2e6c", "thumb_exists": false, 

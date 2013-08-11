@@ -26,7 +26,6 @@ import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.AbstractHttpMessage;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
@@ -65,7 +64,7 @@ public class RestConnectionImpl implements RestConnection {
 	public RestResponse<String> get(String url, Map<String, String> queryStr, String... headers) {
 		url = addQueryStringToUrl(url, queryStr);
 		HttpGet httpMethod = new HttpGet(url);
-		return execute(httpMethod, url, headers);
+		return execute(httpMethod, headers);
 	}
 
 	public RestResponse<InputStream> getStream(String url, String... headers) {
@@ -75,7 +74,7 @@ public class RestConnectionImpl implements RestConnection {
 	public RestResponse<InputStream> getStream(String url, Map<String, String> queryStr, String... headers) {
 		url = addQueryStringToUrl(url, queryStr);
 		HttpGet httpMethod = new HttpGet(url);
-		return executeStream(httpMethod, url, headers);
+		return executeStream(httpMethod, headers);
 	}
 
 	public RestResponse<String> delete(String url, String... headers) {
@@ -85,64 +84,64 @@ public class RestConnectionImpl implements RestConnection {
 	public RestResponse<String> delete(String url, Map<String, String> queryStr, String... headers) {
 		url = addQueryStringToUrl(url, queryStr);
 		HttpDelete httpMethod = new HttpDelete(url);
-		return execute(httpMethod, url, headers);
+		return execute(httpMethod, headers);
 	}
 
 	public RestResponse<String> post(String url, String body, String... headers) {
 		HttpPost httpMethod = new HttpPost(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, body, headers);
+		RestResponse<String> restResponse = execute(httpMethod, body, headers);
 		return restResponse;
 	}
 
 	public RestResponse<String> post(String url, List<String> formParams, String... headers) {
 		HttpPost httpMethod = new HttpPost(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, formParams, headers);
+		RestResponse<String> restResponse = execute(httpMethod, formParams, headers);
 		return restResponse;
 	}
 
 	public RestResponse<String> post(String url, InputStream content, long contentLength, String... headers) {
 		HttpPost httpMethod = new HttpPost(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, content, contentLength, headers);
+		RestResponse<String> restResponse = execute(httpMethod, content, contentLength, headers);
 		return restResponse;
 	}
 
 	public RestResponse<String> put(String url, String body, String... headers) {
 		HttpPut httpMethod = new HttpPut(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, body, headers);
+		RestResponse<String> restResponse = execute(httpMethod, body, headers);
 		return restResponse;
 	}
 	
 	public RestResponse<String> put(String url, List<String> formParams, String... headers) {
 		HttpPut httpMethod = new HttpPut(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, formParams, headers);
+		RestResponse<String> restResponse = execute(httpMethod, formParams, headers);
 		return restResponse;
 	}
 
 	public RestResponse<String> put(String url, InputStream content, long contentLength, String... headers) {
 		HttpPut httpMethod = new HttpPut(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, content, contentLength, headers);
+		RestResponse<String> restResponse = execute(httpMethod, content, contentLength, headers);
 		return restResponse;
 	}
 	
 	public RestResponse<String> patch(String url, String body, String... headers) {
 		HttpPatch httpMethod = new HttpPatch(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, body, headers);
+		RestResponse<String> restResponse = execute(httpMethod, body, headers);
 		return restResponse;
 	}
 	
 	public RestResponse<String> patch(String url, List<String> formParams, String... headers) {
 		HttpPatch httpMethod = new HttpPatch(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, formParams, headers);
+		RestResponse<String> restResponse = execute(httpMethod, formParams, headers);
 		return restResponse;
 	}
 
 	public RestResponse<String> patch(String url, InputStream content, long contentLength, String... headers) {
 		HttpPatch httpMethod = new HttpPatch(url);
-		RestResponse<String> restResponse = execute(httpMethod, url, content, contentLength, headers);
+		RestResponse<String> restResponse = execute(httpMethod, content, contentLength, headers);
 		return restResponse;
 	}
 
-	protected RestResponse<String> execute(HttpRequestBase httpMethod, String url, String... headers) {
+	protected RestResponse<String> execute(HttpRequestBase httpMethod, String... headers) {
 		HttpClient httpclient = getHttpClient();
 		RestResponse<String> restResponse = null;
 		try {
@@ -150,7 +149,7 @@ public class RestConnectionImpl implements RestConnection {
 			HttpResponse response = httpclient.execute(httpMethod);
 			restResponse = getRestResponse(response);
 		} catch (IOException e) {
-			StringBuilder buf = new StringBuilder().append("Connecting to ").append(url).append(" got exception: ").append(e.getMessage());
+			StringBuilder buf = new StringBuilder().append("Connecting to ").append(httpMethod.getURI()).append(" got exception: ").append(e.getMessage());
 			String msg = buf.toString();
 			log.error(msg, e);
 			throw new ErrorException(Error.formatError(msg));
@@ -160,8 +159,7 @@ public class RestConnectionImpl implements RestConnection {
 		return restResponse;
 	}
 
-	protected RestResponse<String> execute(HttpEntityEnclosingRequestBase httpMethod, String url, String body,
-			String... headers) {
+	protected RestResponse<String> execute(HttpEntityEnclosingRequestBase httpMethod, String body, String... headers) {
 		HttpClient httpclient = getHttpClient();
 		RestResponse<String> restResponse = null;
 		try {
@@ -175,7 +173,7 @@ public class RestConnectionImpl implements RestConnection {
 			HttpResponse response = httpclient.execute(httpMethod);
 			restResponse = getRestResponse(response);
 		} catch (IOException e) {
-			StringBuilder buf = new StringBuilder().append("Connecting to ").append(url).append(" got exception: ").append(e.getMessage());
+			StringBuilder buf = new StringBuilder().append("Connecting to ").append(httpMethod.getURI()).append(" got exception: ").append(e.getMessage());
 			String msg = buf.toString();
 			log.error(msg, e);
 			throw new ErrorException(Error.formatError(msg));
@@ -185,8 +183,7 @@ public class RestConnectionImpl implements RestConnection {
 		return restResponse;
 	}
 
-	protected RestResponse<String> execute(HttpEntityEnclosingRequestBase httpMethod, String url,
-			List<String> formParams, String... headers) {
+	protected RestResponse<String> execute(HttpEntityEnclosingRequestBase httpMethod, List<String> formParams, String... headers) {
 		HttpClient httpclient = getHttpClient();
 		RestResponse<String> restResponse = null;
 		try {
@@ -213,7 +210,7 @@ public class RestConnectionImpl implements RestConnection {
 			HttpResponse response = httpclient.execute(httpMethod);
 			restResponse = getRestResponse(response);
 		} catch (IOException e) {
-			StringBuilder buf = new StringBuilder().append("Connecting to ").append(url).append(" got exception: ").append(e.getMessage());
+			StringBuilder buf = new StringBuilder().append("Connecting to ").append(httpMethod.getURI()).append(" got exception: ").append(e.getMessage());
 			String msg = buf.toString();
 			log.error(msg, e);
 			throw new ErrorException(Error.formatError(msg));
@@ -223,8 +220,7 @@ public class RestConnectionImpl implements RestConnection {
 		return restResponse;
 	}
 
-	protected RestResponse<String> execute(HttpEntityEnclosingRequestBase httpMethod, String url, InputStream is,
-			long length, String... headers) {
+	protected RestResponse<String> execute(HttpEntityEnclosingRequestBase httpMethod, InputStream is, long length, String... headers) {
 		HttpClient httpclient = getHttpClient();
 		RestResponse<String> restResponse = null;
 		try {
@@ -238,7 +234,7 @@ public class RestConnectionImpl implements RestConnection {
 			HttpResponse response = httpclient.execute(httpMethod);
 			restResponse = getRestResponse(response);
 		} catch (IOException e) {
-			StringBuilder buf = new StringBuilder().append("Connecting to ").append(url).append(" got exception: ").append(e.getMessage());
+			StringBuilder buf = new StringBuilder().append("Connecting to ").append(httpMethod.getURI()).append(" got exception: ").append(e.getMessage());
 			String msg = buf.toString();
 			log.error(msg, e);
 			throw new ErrorException(Error.formatError(msg));
@@ -248,7 +244,7 @@ public class RestConnectionImpl implements RestConnection {
 		return restResponse;
 	}
 
-	protected RestResponse<InputStream> executeStream(HttpRequestBase httpMethod, String url, String... headers) {
+	protected RestResponse<InputStream> executeStream(HttpRequestBase httpMethod, String... headers) {
 		HttpClient httpclient = getHttpClient();
 		RestResponse<InputStream> restResponse = null;
 		try {
@@ -256,7 +252,7 @@ public class RestConnectionImpl implements RestConnection {
 			HttpResponse response = httpclient.execute(httpMethod);
 			restResponse = getRestResponseAsStream(httpclient, response);
 		} catch (IOException e) {
-			StringBuilder buf = new StringBuilder().append("Connecting to ").append(url).append(" got exception: ").append(e.getMessage());
+			StringBuilder buf = new StringBuilder().append("Connecting to ").append(httpMethod.getURI()).append(" got exception: ").append(e.getMessage());
 			String msg = buf.toString();
 			log.error(msg, e);
 			releaseConnection(httpclient);
@@ -312,7 +308,7 @@ public class RestConnectionImpl implements RestConnection {
 		return url;
 	}
 
-	protected void addHeaders(AbstractHttpMessage httpMethod, String... headers) {
+	protected void addHeaders(HttpRequestBase httpMethod, String... headers) {
 		if (headers == null || headers.length <= 0) {
 			return;
 		}
@@ -324,6 +320,11 @@ public class RestConnectionImpl implements RestConnection {
 		for (int index = 0, len = headers.length; index < len; index = index + 2) {
 			httpMethod.addHeader(headers[index], headers[index + 1]);
 		}
+		
+		/*Header[] hs = httpMethod.getAllHeaders();
+		for (Header h: hs) {
+			log.debug("{} has header {}={}", httpMethod.getURI(), h.getName(), h.getValue());
+		}*/
 	}
 
 	protected RestResponse<String> getRestResponse(HttpResponse response) throws IOException {
@@ -334,9 +335,7 @@ public class RestConnectionImpl implements RestConnection {
 		String responseBody = null;
 		if (responseEntity != null) {
 			responseBody = EntityUtils.toString(responseEntity, encoding);
-		}/* else {
-			responseBody = "";
-		}*/
+		}
 		restResponse.setBody(responseBody);
 		return restResponse;
 	}

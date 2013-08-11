@@ -3,8 +3,9 @@ package mybox.web.controller;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import mybox.backend.PathUtil;
 import mybox.model.User;
+import mybox.type.ServiceType;
+import mybox.util.PathUtil;
 import mybox.util.WebUtil;
 
 import org.apache.commons.lang.StringUtils;
@@ -25,7 +26,7 @@ public class AuthController extends BaseController {
 		if (StringUtils.isBlank(serviceType)) {
 			serviceType = ServiceType.DROPBOX.value();
 		}
-		String serviceUrl = PathUtil.buildPath(request.getContextPath(), serviceType);
+		String serviceUrl = PathUtil.combinePath(request.getContextPath(), serviceType);
 		request.setAttribute("service", serviceUrl);
 		return "login";
 	}
@@ -36,21 +37,5 @@ public class AuthController extends BaseController {
 		log.debug("User {} from {} logout!", user, WebUtil.getUserAddress(request));
 		session.removeAttribute("user");
 		return "login";
-	}
-	
-	public enum ServiceType {
-
-		// default service type is empty
-		DISK("dk"), DROPBOX("db");
-		
-		private final String value;
-		
-		private ServiceType(String value) {
-			this.value = value;
-		}
-		
-		public String value() {
-			return value;
-		}
 	}
 }

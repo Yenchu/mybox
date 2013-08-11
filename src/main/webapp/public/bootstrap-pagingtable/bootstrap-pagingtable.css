@@ -1,0 +1,23 @@
+.goto-page {
+  padding-left: 5px;
+}
+
+.goto-page input {
+  margin-bottom: 0;
+}
+
+.sort {
+  margin-top: 8px;
+}
+
+.sort-desc {
+  border-top: 0;
+  border-bottom: 4px solid #000000;
+}
+
+.loading-spinner {
+  background:url(spinner.gif) no-repeat;
+  width: 48px;
+  height: 48px;
+  position: absolute;
+}

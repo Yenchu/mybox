@@ -3,13 +3,13 @@ package mybox.service;
 import java.util.List;
 
 import mybox.SpringUnitTest;
-import mybox.backend.dropbox.DropboxUtil;
+import mybox.model.DropboxUser;
 import mybox.model.Link;
 import mybox.model.MetadataEntry;
 import mybox.model.User;
-import mybox.model.dropbox.DeltaPage;
-import mybox.model.dropbox.DropboxUser;
+import mybox.model.DeltaPage;
 import mybox.service.DropboxService;
+import mybox.service.support.DropboxUtil;
 import mybox.to.CreateParams;
 import mybox.to.DeltaParams;
 import mybox.to.EntryParams;

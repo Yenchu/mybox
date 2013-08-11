@@ -9,16 +9,27 @@ import java.util.Map.Entry;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import mybox.exception.Error;
-import mybox.exception.ErrorException;
-import mybox.model.User;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import mybox.exception.Error;
+import mybox.exception.ErrorException;
+import mybox.model.User;
+
 public class WebUtil {
 
 	private static final Logger log = LoggerFactory.getLogger(WebUtil.class);
+	
+	public static void clearSession(HttpServletRequest request) {
+		HttpSession session = request.getSession();
+		Enumeration<String> enumer = session.getAttributeNames();
+		while (enumer.hasMoreElements()) {
+			String name = enumer.nextElement();
+			log.debug("Clear session data: {}", name);
+			session.removeAttribute(name);
+		}
+	}
 
 	public static User getUser(HttpServletRequest request) {
 		HttpSession session = request.getSession();
@@ -31,7 +42,6 @@ public class WebUtil {
 			throw new ErrorException(Error.unauthorized());
 		}
 		
-		user.setIp(WebUtil.getUserAddress(request));
 		HttpSession session = request.getSession();
 		session.setAttribute("user", user);
 	}

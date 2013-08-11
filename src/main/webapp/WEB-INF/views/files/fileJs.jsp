@@ -77,7 +77,7 @@ var FileTable = (function() {
 			inlineEditing: true,
 			isMultiSelect: true,
 			loadOnce: true,
-			remote: {url:'${service}/metadata', editUrl:'${service}/fileops/edit', deleteUrl:'${service}/fileops/edit'
+			remote: {url:'${service}/metadata', editUrl:'${service}/fileops/rename', deleteUrl:'${service}/fileops/delete'
 				, params:{space:spaceId, folder:currentFolder}, method:'POST'}
 		};
 		$table = createTable(options, dblClickRow);
@@ -85,8 +85,8 @@ var FileTable = (function() {
 	
 	function createSearchTable(query) {
 		if (isSearching) {
+			var options = $table.pagingtable('getOptions');
 			options.remote.params = {space:spaceId, folder:currentFolder, query:query};
-			$table.pagingtable('setOptions', options);
 			reload();
 			return;
 		}
@@ -114,7 +114,7 @@ var FileTable = (function() {
 			inlineEditing: true,
 			isMultiSelect: true,
 			loadOnce: true,
-			remote: {url:'${service}/search', editUrl:'${service}/fileops/edit', deleteUrl:'${service}/fileops/edit'
+			remote: {url:'${service}/search', editUrl:'${service}/fileops/rename', deleteUrl:'${service}/fileops/delete'
 				, params:{space:spaceId, folder:currentFolder, query:query}, method:'POST'}
 		};
 		$table = createTable(options, dblClickRowInSearch);
@@ -129,19 +129,27 @@ var FileTable = (function() {
 		}).pagingtable(options).off('dblclickRow').on('dblclickRow', function(e) {
 			var rowId = e.rowId;
 			dbClickRowHandler(rowId);
+		}).off('remoteLoadError').on('remoteLoadError', function(e) {
+			var resp = $.parseJSON(e.jqXHR.responseText);
+			error(resp.message || 'Loading data failed.');
 		}).off('add update').on('add update', function(e) {
-			var newFileName = e.form.find('[name="name"]').val();
+			var $form = e.form;
+			var newFileName = $form.find('[name="name"]').val();
 			if (!validateFileName(newFileName)) {
 				e.preventDefault();
+			}
+			var id = $form.find('[name="id"]').val();
+			if (!id || id == '0') {
+				$form.attr('action', '${service}/fileops/create_folder');
 			}
 		}).off('added updated').on('added updated', function(e) {
 			var rowId = e.rowId, rowData = $table.pagingtable('getRowData', rowId), newFileName = rowData.name;
 			var msg = (!rowId || rowId == '0' ? 'Creating folder ' + newFileName + ' success.' : 'Renaming to ' + newFileName + ' success.');
-			notify(msg, NotifyType.SUCCESS);
+			success(msg);
 		}).off('addError updateError').on('addError updateError', function(e) {
 			var rowId = e.rowId, rowData = $table.pagingtable('getRowData', rowId), newFileName = rowData.name;
 			var msg = (!rowId || rowId == '0' ? 'Creating folder ' + newFileName + ' failed.' : 'Renaming to ' + newFileName + ' failed.');
-			notify(msg, NotifyType.ERROR);
+			error(msg, NotifyType.ERROR);
 		});
 	}
 	
@@ -221,8 +229,8 @@ var FileTable = (function() {
 		var rowData = getRowData(rowId);
 		if (isFolder(rowData)) {
 			isLoadingSubFolder = true;
-			var folderPath = rowData.path;
-			loadFolder(folderPath);
+			var folder = rowData.path;
+			loadFolder(folder);
 		} else {
 			downloadFile(rowData);
 		}
@@ -257,8 +265,8 @@ var FileTable = (function() {
 	}
 	
 	function loadFiles() {
+		var options = $table.pagingtable('getOptions');
 		options.remote.params = {space:spaceId, folder:currentFolder};
-		$table.pagingtable('setOptions', options);
 		reload();
 	}
 
@@ -286,7 +294,7 @@ var FileTable = (function() {
 		!rowData && (rowData = getSelectedRowData());
 
 		if (isFolder(rowData)) {
-			notify('Download folder is not allowed!', NotifyType.ERROR);
+			error('Download folder is not allowed!');
 			return;
 		}
 		
@@ -305,14 +313,14 @@ var FileTable = (function() {
 
 	function validateFileName(fileName) {
 		if (fileName === '') {
-			notify('File name can not be empty!', NotifyType.ERROR);
+			error('File name can not be empty!');
 			return false;
 		}
 		
 		var pattern = /[\\\/:*?\"<>|]/;       // invalid chars: \/:*?"<>|
 		var result = pattern.test(fileName);
 		if (result) {
-			notify('\/:*?"<>| is invalid!', NotifyType.ERROR);
+			error('\/:*?"<>| is invalid!');
 			return false;
 		}
 		return true;
@@ -397,7 +405,7 @@ var FileTable = (function() {
 		}).done(function(resps) {
 			notifyFileOperationResult(opeName, resps);
 		}).fail(function() {
-			notify(opeName + ' operation failed.', NotifyType.ERROR);
+			error(opeName + ' operation failed.');
 		});
 	}
 	
@@ -418,11 +426,11 @@ var FileTable = (function() {
 			}
 		}
 		if (successFiles != '') {
-			notify(action + ' ' + successFiles + ' success.', NotifyType.SUCCESS);
+			success(action + ' ' + successFiles + ' success.');
 		}
 		if (failFiles != '') {
 			var positionOrder = (successFiles != '' ? 1 : 0);
-			notify(action + ' ' + failFiles + ' failed.', NotifyType.ERROR, positionOrder);
+			error(action + ' ' + failFiles + ' failed.', positionOrder);
 		}
 	}
 	
@@ -465,7 +473,7 @@ var FileTable = (function() {
 		}).done(function(resp) {
 			displayRevisions(fileName, resp);
 		}).fail(function() {
-			notify('Getting revisions failed.', NotifyType.ERROR);
+			error('Getting revisions failed.');
 		});
 	}
 	
@@ -494,9 +502,9 @@ var FileTable = (function() {
 			$('#file-modal').modal('hide');
 			loadFiles();
 		}).done(function(resp) {
-			notify('File ' + resp.name + ' restored.', NotifyType.SUCCESS);
+			success('File ' + resp.name + ' restored.');
 		}).fail(function() {
-			notify('Restoring file failed.', NotifyType.ERROR);
+			error('Restoring file failed.');
 		});
 	}
 	
@@ -509,7 +517,7 @@ var FileTable = (function() {
 		}).done(function(resp) {
 			location.href = resp.url;
 		}).fail(function() {
-			notify('Linking file failed.', NotifyType.ERROR);
+			error('Linking file failed.');
 		});
 	}
 	
@@ -521,7 +529,7 @@ var FileTable = (function() {
 		}).done(function(resp) {
 			displayShares(rowData, resp);
 		}).fail(function() {
-			notify('Getting shared files failed.', NotifyType.ERROR);
+			error('Getting shared files failed.');
 		});
 	}
 
@@ -611,9 +619,9 @@ var FileTable = (function() {
 			type: 'POST'
 		}).done(function(resp) {
 			$('#file-modal').modal('hide');
-			notify('Sharing file success.', NotifyType.SUCCESS);
+			success('Sharing file success.');
 		}).fail(function() {
-			notify('Sharing file failed.', NotifyType.ERROR);
+			error('Sharing file failed.');
 		});
 	}
 	function shareFileTmp(userId, permission) {
@@ -626,7 +634,7 @@ var FileTable = (function() {
 		}).done(function(resp) {
 			displaySharing(resp);
 		}).fail(function() {
-			notify('Sharing file failed.', NotifyType.ERROR);
+			error('Sharing file failed.');
 		});
 	}
 	

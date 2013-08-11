@@ -1,7 +1,7 @@
 package mybox.to;
 
-import mybox.backend.dropbox.DropboxUtil;
 import mybox.model.User;
+import mybox.service.support.DropboxUtil;
 
 public class ChunkedUploadParams extends UploadParams {
 

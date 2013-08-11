@@ -73,6 +73,7 @@ public class RestResponseValidator {
 		}
 		if (error == null) {
 			error = new Error(statusCode);
+			error.setTitle("Error");
 			error.setMessage(content);
 		}
 		throw new ErrorException(error);

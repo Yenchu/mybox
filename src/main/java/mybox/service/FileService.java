@@ -47,6 +47,8 @@ public interface FileService {
 	
 	public MetadataEntry upload(UploadParams params);
 	
+	public MetadataEntry upload(UploadParams params, boolean isPut);
+	
 	public MetadataEntry chunkedUpload(ChunkedUploadParams params);
 	
 	public List<MetadataEntry> getRevisions(RevisionParams params);

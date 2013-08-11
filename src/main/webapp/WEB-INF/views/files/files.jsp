@@ -122,7 +122,7 @@ function getUploadJs() {
 	}
 	
 	// add extra info to upload url to tell server how ot handle upload
-	uploadJsOptions.url = '${service}/files?detectFileSize=' + detectFileSize;
+	uploadJsOptions.url = '${service}/files_put?detectFileSize=' + detectFileSize;
 	
 	$.ajax({
 		url: '${service}/uploadjs',

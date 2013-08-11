@@ -12,6 +12,7 @@
 			<div class="nav-collapse collapse">
 				<ul class="nav">
 					<li id="topnav-home"><a href="${service}/">Home</a></li>
+					<li id="topnav-website"><a href="${service}/website/${space.id}/html/index.html">Pages</a></li>
 					<li id="topnav-events"><a href="${contextPath}/events">Events</a></li>
 					<li id="topnav-apps"><a href="${contextPath}/apps">Apps</a></li>
 					<li id="topnav-settings"><a href="${contextPath}/settings">Settings</a></li>

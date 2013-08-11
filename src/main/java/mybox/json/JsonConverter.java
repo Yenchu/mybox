@@ -3,11 +3,12 @@ package mybox.json;
 import java.lang.reflect.Type;
 import java.util.Map;
 
+import mybox.exception.Error;
+import mybox.exception.ErrorException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import mybox.exception.Error;
-import mybox.exception.ErrorException;
 
 public class JsonConverter {
 

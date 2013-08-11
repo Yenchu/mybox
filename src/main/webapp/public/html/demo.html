@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/css/bootstrap-combined.min.css" rel="stylesheet">
+<style>
+.thumb {
+	height: 75px;
+	border: 1px solid #000;
+	margin: 10px 5px 0 0;
+}
+#drop_zone {
+	height: 75px;
+	width: 50%;
+	border: 1px solid #000;
+}
+.progress_bar {
+    border: 1px solid #000;
+    margin: 10px 0;
+    padding: 3px;
+    font-size: 14px;
+    clear: both;
+    opacity: 0;
+    -moz-transition: opacity 1s linear;
+    -o-transition: opacity 1s line ar;
+    -webkit-transition: opacity 1s linear;
+}
+.progress_bar.loading {
+    opacity: 1.0;
+}
+.progress_bar .percent {
+    background-color: #99ccff;
+    height: auto;
+    width: 0;
+}
+</style>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+<script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container">
+	<div class="row">
+		<div class="span12">
+			<h4>Select Files</h4>
+			<div>
+				<input type="file" id="files" name="files[]" multiple directory webkitdirectory mozdirectory />
+				<div id="output"></div>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="span12">
+			<h4>Read Files</h4>
+			<div>
+				<input type="file" id="files2" name="files[]" multiple />
+				<div id="output2"></div>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="span12">
+			<h4>Drag and Drop</h4>
+			<div>
+				<div id="drop_zone">Drop files here</div>
+				<button class="upload">Upload</button>
+				<div id="output3"></div>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="span12">
+			<h4>Monitor Upload Progress</h4>
+			<div>
+				<input type="file" id="files4" name="files[]" multiple />
+				<button class="upload">Upload</button>
+				<div id="output4"></div>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+function displayFileInfo(event) {
+	var files = event.target.files;
+    var output = [];
+    for (var i = 0, f; f = files[i]; i++) {
+		output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ', f.size, ' bytes, last modified: ', 
+				f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a', '</li>');
+	}
+	$('#output').html('<ul>' + output.join('') + '</ul>');
+}
+
+function readFile(event) {
+	$('#output2').empty();
+	var files = event.target.files;
+    var output = [];
+    for (var i = 0, f; f = files[i]; i++) {
+    	if (!f.type.match('image.*')) {
+			continue;
+		}
+    	
+    	var reader = new FileReader();
+    	reader.onload = (function(theFile) {
+			return function(e) {
+				var span = $('<span>' +'<img class="thumb" src="' + e.target.result + '" title="' + escape(theFile.name) + '"/>' + '</span>');
+				$('#output2').append(span);
+			};
+		})(f);
+
+		reader.readAsDataURL(f);
+	}
+}
+
+function handleDragOver(event) {
+	event.stopPropagation();
+	event.preventDefault();
+	//event.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+}
+function handleDrop(event) {
+	event.stopPropagation();
+	event.preventDefault();
+	var files = event.dataTransfer.files;
+	var output = [];
+	for (var i = 0, f; f = files[i]; i++) {
+		output.push('<li><strong>', escape(f.name), '</strong> (', f.type || 'n/a', ') - ', f.size, ' bytes, last modified: ', 
+				f.lastModifiedDate ? f.lastModifiedDate.toLocaleDateString() : 'n/a', '</li>');
+	}
+	var $output = $('#output3').html('<ul>' + output.join('') + '</ul>');
+	
+	var readers = createReaders(files, $output);
+	$('#drop_zone').siblings('.upload').click(function() {
+		for (var i = 0, r, f; r = readers[i], f = files[i]; i++) {
+			r.readAsBinaryString(f);
+		}
+	});
+ }
+
+function handleError(event) {
+	var error = event.target.error;
+	switch(error.code) {
+		case error.NOT_FOUND_ERR:
+			console.log('File Not Found!');
+			break;
+		case error.NOT_READABLE_ERR:
+			console.log('File is not readable!');
+			break;
+		case error.ABORT_ERR:
+			console.log('File is aborted!');
+			break;
+		default:
+			console.log('An error occurred when reading this file!');
+	};
+}
+function upload(file)  {
+	var formData = new FormData();
+	var fileName = escape(file.name);
+	formData.append(fileName, file);
+	formData.append('fileSize', file.size);
+	$.ajax({
+		url: '/ap/files',
+		data: formData,
+		type: 'POST',
+		cache: false,
+		contentType: false,
+		processData: false,
+		success: function(data){
+			console.log(data);
+		}
+	});
+}
+function createReaders(files, $container) {
+	var progressBarTemplate = '<div class="progress_bar"><div class="percent">0%</div></div>';
+	var readers = [];
+	for (var i = 0, f; f = files[i]; i++) {
+		var fileName = f.name;
+		var uploadBar = '<div class="upload_bar"><span>' + fileName + '</span><button class="cancel">Cancel</button>' + progressBarTemplate + '</div>';
+		var $uploadBar = $(uploadBar);
+		$container.append($uploadBar);
+
+		var reader = new FileReader();
+		readers.push(reader);
+		
+		reader.onerror = handleError;
+		reader.onabort = (function(fileName) {
+			return function(e) {
+				console.log(fileName + ' upload cancelled');
+			};
+		})(fileName);
+		reader.onloadstart = (function($uploadBar, $container) {
+			return function(e) {
+				if (e.lengthComputable) {
+					var total = $container.data('total') || 0;
+					total += e.total;
+					$container.data('total', total);
+				}
+				$uploadBar.find('.progress_bar').addClass('loading');
+				$container.find('.total_upload_bar .progress_bar').addClass('loading');
+			};
+		})($uploadBar, $container);
+		reader.onprogress = (function($uploadBar, $container) {
+			return function(e) {
+				if (e.lengthComputable) {
+					var percentLoaded = Math.round((e.loaded / e.total) * 100);
+					
+					var total = $container.data('total');
+					var loaded = $container.data('loaded') || 0;
+					var totalPercentLoaded = Math.round(((e.loaded + loaded) / total) * 100);
+					
+					if (percentLoaded < 100) {
+						$uploadBar.find('.percent').width(percentLoaded + '%').html(percentLoaded + '%');
+						$container.find('.total_upload_bar .percent').width(totalPercentLoaded + '%').html(totalPercentLoaded + '%');
+					}
+				}
+			};
+		})($uploadBar, $container);
+		reader.onload = (function(file, $uploadBar, $container) {
+			return function(e) {
+				upload(file);
+				$uploadBar.find('.percent').width('100%').html('100%');
+				setTimeout(function(){$uploadBar.find('.progress_bar').removeClass('loading');}, 1000);
+				
+				var total = $container.data('total');
+				var loaded = $container.data('loaded') || 0;
+				loaded += e.total;
+				$container.data('loaded', loaded);
+				var totalPercentLoaded = Math.round((loaded / total) * 100);
+				$container.find('.total_upload_bar .percent').width(totalPercentLoaded + '%').html(totalPercentLoaded + '%');
+				if (totalPercentLoaded >= 100) {
+					setTimeout(function(){$container.find('.total_upload_bar .progress_bar').removeClass('loading');}, 1000);
+				}
+			};
+		})(f, $uploadBar, $container);
+		reader.onloadend = (function(file, $uploadBar, $container) {
+			return function(e) {
+				if (evt.target.readyState == FileReader.DONE) { // DONE == 2
+					document.getElementById('byte_content').textContent = evt.target.result;
+					document.getElementById('byte_range').textContent = 
+						['Read bytes: ', start + 1, ' - ', stop + 1, ' of ', file.size, ' byte file'].join('');
+				}
+			};
+		})(f, $uploadBar, $container);
+		
+		$uploadBar.on('click', '.cancel', {reader:reader}, function(e) {
+			e.data.reader.abort();
+		});
+	}
+	var totalUploadBar = '<div class="total_upload_bar"><span>Total</span><button class="cancel">Cancel</button>' + progressBarTemplate + '</div>';
+	var $totalUploadBar = $(totalUploadBar);
+	$container.append($totalUploadBar);
+	return readers;
+}
+function monitorUploadProgress(event) {
+	var $output = $('#output4').empty();
+	var files = event.target.files;
+	var readers = createReaders(files, $output);
+	$('#files4').siblings('.upload').click(function() {
+		for (var i = 0, r, f; r = readers[i], f = files[i]; i++) {
+			r.readAsBinaryString(f);
+		}
+	});
+}
+
+$(function() {
+	$('#files').on('change', displayFileInfo);
+	$('#files2').on('change', readFile);
+	
+	$.event.props.push('dataTransfer');
+	var dropZone = $('#drop_zone').on('dragover', handleDragOver).on('drop', handleDrop);
+	$('#files4').on('change', monitorUploadProgress);
+});
+</script>
+</body>
+</html>

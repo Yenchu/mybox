@@ -150,29 +150,6 @@ public class RestClientImpl implements RestClient {
 		return entity;
 	}
 	
-	public <T> T get(String url, String[] headers, Class<T> clazz, boolean hasJsonRoot) {
-		RestResponse<String> restResponse = get(url, headers);
-		return JsonConverter.fromJson(restResponse.getBody(), clazz, hasJsonRoot);
-	}
-	
-	public <T, E> E post(String url, String[] headers, T entity, Class<E> clazz, boolean hasJsonRoot) {
-		String body = entity != null ? JsonConverter.toJson(entity, true) : null;
-		RestResponse<String> restResponse = post(url, body, headers);
-		return JsonConverter.fromJson(restResponse.getBody(), clazz, hasJsonRoot);
-	}
-	
-	public <T, E> E put(String url, String[] headers, T entity, Class<E> clazz, boolean hasJsonRoot) {
-		String body = entity != null ? JsonConverter.toJson(entity, true) : null;
-		RestResponse<String> restResponse = put(url, body, headers);
-		return JsonConverter.fromJson(restResponse.getBody(), clazz, hasJsonRoot);
-	}
-	
-	public <T, E> E patch(String url, String[] headers, T entity, Class<E> clazz, boolean hasJsonRoot) {
-		String body = entity != null ? JsonConverter.toJson(entity, true) : null;
-		RestResponse<String> restResponse = patch(url, body, headers);
-		return JsonConverter.fromJson(restResponse.getBody(), clazz, hasJsonRoot);
-	}
-	
 	protected RestConnection getRestConnection() {
 		if (restConnection == null) {
 			restConnection = new RestConnectionImpl();

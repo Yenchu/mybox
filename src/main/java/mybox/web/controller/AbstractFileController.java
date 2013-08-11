@@ -12,7 +12,6 @@ import javax.mail.internet.MimeUtility;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import mybox.backend.PathUtil;
 import mybox.exception.Error;
 import mybox.exception.ErrorException;
 import mybox.json.JsonConverter;
@@ -39,7 +38,7 @@ import mybox.to.SearchParams;
 import mybox.to.ThumbnailParams;
 import mybox.to.UploadParams;
 import mybox.to.UploadResponse;
-import mybox.util.FileUtil;
+import mybox.util.PathUtil;
 import mybox.util.UrlEncodeUtil;
 import mybox.util.UserAgentParser;
 import mybox.util.WebUtil;
@@ -92,7 +91,7 @@ public abstract class AbstractFileController extends BaseController {
 		WebUtil.setUser(request, user);
 		
 		String serviceType = WebUtil.getFirstPathAfterContextPath(request);
-		String serviceUrl = PathUtil.buildPath(request.getContextPath(), serviceType);
+		String serviceUrl = PathUtil.combinePath(request.getContextPath(), serviceType);
 		AuthResponse authResp = new AuthResponse();
 		authResp.setServiceUrl(serviceUrl);
 		return authResp;
@@ -139,10 +138,6 @@ public abstract class AbstractFileController extends BaseController {
 			if (entries != null && entries.size() > 0) {
 				sortByFolder(entries);
 			}
-		}
-		if (entries == null) {
-			//* just return empty list to jqGrid
-			entries = new ArrayList<MetadataEntry>();
 		}
 		
 		Page<MetadataEntry> page = new Page<MetadataEntry>(entries);
@@ -281,15 +276,26 @@ public abstract class AbstractFileController extends BaseController {
 	public void upload( 
 			@RequestParam(value = "detectFileSize", required = false) Boolean detectFileSize, 
 			HttpServletRequest request, HttpServletResponse response) {
+		this.upload(false, detectFileSize, request, response);
+	}
+	
+	@RequestMapping(value = "/files_put", method = {RequestMethod.PUT, RequestMethod.POST})
+	public void uploadByPut( 
+			@RequestParam(value = "detectFileSize", required = false) Boolean detectFileSize, 
+			HttpServletRequest request, HttpServletResponse response) {
+		this.upload(true, detectFileSize, request, response);
+	}
+	
+	protected void upload(Boolean isPut, Boolean detectFileSize, HttpServletRequest request, HttpServletResponse response) {
 		User user = WebUtil.getUser(request);
 		log.info("User {} upload file: detectFileSize={}", user.toString(), detectFileSize);
 		
 		List<UploadResponse> uploadResps = null;
-		if (detectFileSize) {
-			uploadResps = upload(request);
+		if (detectFileSize != null && detectFileSize == true) {
+			uploadResps = upload(isPut, request);
 		} else {
 			log.debug("Save uploaded file to tmp folder for request {} from {}.", request.getRequestURI(), WebUtil.getUserAddress(request));
-			uploadResps = uploadCached(request);
+			uploadResps = uploadCached(isPut, request);
 		}
 		
 		for (UploadResponse uploadResp: uploadResps) {
@@ -308,10 +314,10 @@ public abstract class AbstractFileController extends BaseController {
 			log.error("Got exception when handling request {} from {}: {}", request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage());
 		}
 	}
-
-	@RequestMapping(value = "/fileops/edit", method = RequestMethod.POST)
+	
+	@RequestMapping(value = "/fileops/create_folder", method = RequestMethod.POST)
 	@ResponseBody
-	public FileOperationResponse edit( 
+	public FileOperationResponse createFolder(
 			@RequestParam(value = "space", required = false) String space, 
 			@RequestParam(value = "folder", required = false) String folder, 
 			@RequestParam(value = "id", required = false) String id, 
@@ -319,26 +325,33 @@ public abstract class AbstractFileController extends BaseController {
 			HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
 		String parentPath = decodeUrl(folder);
+		String folderPath = PathUtil.combinePath(parentPath, name);
+		log.info("User {} create folder {}:{}", user.toString(), space, folderPath);
 		
+		CreateParams params = new CreateParams(user, space, folderPath);
+		FileOperationResponse resp = getService().createFolder(params);
+		return resp;
+	}
+	
+	@RequestMapping(value = "/fileops/rename", method = RequestMethod.POST)
+	@ResponseBody
+	public FileOperationResponse rename(
+			@RequestParam(value = "space", required = false) String space, 
+			@RequestParam(value = "folder", required = false) String folder, 
+			@RequestParam(value = "id", required = false) String id, 
+			@RequestParam(value = "name", required = false) String name, 
+			HttpServletRequest request) {
+		User user = WebUtil.getUser(request);
+		String parentPath = decodeUrl(folder);
+		String srcPath = decodeUrl(id);
+		String destPath = PathUtil.combinePath(parentPath, name);
+		log.info("User {} rename {}:{} to {}", user.toString(), space, srcPath, destPath);
+		
+		MoveParams params = new MoveParams(user, space, new String[]{srcPath}, new String[]{destPath});
+		List<FileOperationResponse> resps = getService().move(params);
 		FileOperationResponse resp = null;
-		if ("0".equals(id)) {
-			// create folder
-			String folderPath = FileUtil.getPath(parentPath, name);
-			log.info("User {} create folder {}:{}", user.toString(), space, folderPath);
-			
-			CreateParams params = new CreateParams(user, space, folderPath);
-			resp = getService().createFolder(params);
-		} else {
-			// rename
-			String srcPath = decodeUrl(id);
-			String destPath = FileUtil.getPath(parentPath, name);
-			log.info("User {} rename {}:{} to {}", user.toString(), space, srcPath, destPath);
-			
-			MoveParams params = new MoveParams(user, space, new String[]{srcPath}, new String[]{destPath});
-			List<FileOperationResponse> resps = getService().move(params);
-			if (resps != null && resps.size() == 1) {
-				resp = resps.get(0);
-			}
+		if (resps != null && resps.size() == 1) {
+			resp = resps.get(0);
 		}
 		return resp;
 	}
@@ -373,8 +386,8 @@ public abstract class AbstractFileController extends BaseController {
 		int len = srcFilePaths.length;
 		String[] destFilePaths = new String[len];
 		for (int i = 0; i < len; i++) {
-			String srcFileName = FileUtil.getNameFromPath(srcFilePaths[i]);
-			String destPath = FileUtil.getPath(destFolderPath, srcFileName);
+			String srcFileName = PathUtil.getLastPath(srcFilePaths[i]);
+			String destPath = PathUtil.combinePath(destFolderPath, srcFileName);
 			destFilePaths[i] = destPath;
 		}
 		
@@ -398,8 +411,8 @@ public abstract class AbstractFileController extends BaseController {
 		int len = srcFilePaths.length;
 		String[] destFilePaths = new String[len];
 		for (int i = 0; i < len; i++) {
-			String srcFileName = FileUtil.getNameFromPath(srcFilePaths[i]);
-			String destPath = FileUtil.getPath(destFolderPath, srcFileName);
+			String srcFileName = PathUtil.getLastPath(srcFilePaths[i]);
+			String destPath = PathUtil.combinePath(destFolderPath, srcFileName);
 			destFilePaths[i] = destPath;
 		}
 		
@@ -504,7 +517,7 @@ public abstract class AbstractFileController extends BaseController {
 		return page;
 	}
 	
-	protected List<UploadResponse> upload(HttpServletRequest request) {
+	protected List<UploadResponse> upload(Boolean isPut, HttpServletRequest request) {
 		List<UploadResponse> uploadResps = new ArrayList<UploadResponse>();
 		boolean isMultipart = ServletFileUpload.isMultipartContent(request);
 		if (!isMultipart) {
@@ -515,6 +528,7 @@ public abstract class AbstractFileController extends BaseController {
 		String space = null;
 		String folderPath = null;
 		String fileName = null;
+		Boolean overwrite = true; // default
 		long fileSize = -1;
 		try {
 			ServletFileUpload upload = new ServletFileUpload();
@@ -539,11 +553,15 @@ public abstract class AbstractFileController extends BaseController {
 						if (value != null && !"".equals(value)) {
 							fileSize = Long.parseLong(value);
 						}
+					} else if ("overwrite".equals(fieldName)) {
+						if (value != null && !"".equals(value)) {
+							overwrite = Boolean.parseBoolean(value);
+						}
 					}
 				} else {
 					fileName = item.getName();
 					log.debug("File name {}", fileName);
-					fileSize = saveFile(request, space, folderPath, fileName, content, fileSize);
+					fileSize = saveFile(request, space, folderPath, fileName, content, fileSize, overwrite, isPut);
 					UploadResponse resp = new UploadResponse(fileName, fileSize);
 					uploadResps.add(resp);
 				}
@@ -551,19 +569,19 @@ public abstract class AbstractFileController extends BaseController {
 		} catch (ErrorException e) {
 			Error error = e.getError();
 			log.warn("Got error when handling request {} from {}: {}", request.getRequestURI(), WebUtil.getUserAddress(request), error);
-			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle());
+			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle() != null ? error.getTitle() : "failed");
 			uploadResps.add(resp);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			log.error("Got exception when handling request {} from {}: {}", request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage());
 			Error error = Error.internalServerError(e.getMessage());
-			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle());
+			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle() != null ? error.getTitle() : "failed");
 			uploadResps.add(resp);
 		}
 		return uploadResps;
 	}
 	
-	protected List<UploadResponse> uploadCached(HttpServletRequest request) {
+	protected List<UploadResponse> uploadCached(Boolean isPut, HttpServletRequest request) {
 		List<UploadResponse> uploadResps = new ArrayList<UploadResponse>();
 		boolean isMultipart = ServletFileUpload.isMultipartContent(request);
 		if (!isMultipart) {
@@ -574,6 +592,7 @@ public abstract class AbstractFileController extends BaseController {
 		String space = null;
 		String folderPath = null;
 		String fileName = null;
+		Boolean overwrite = true; // default
 		long fileSize = -1;
 		try {
 			DiskFileItemFactory factory = new DiskFileItemFactory();
@@ -596,13 +615,17 @@ public abstract class AbstractFileController extends BaseController {
 						space = value;
 					} else if ("folder".equals(fieldName)) {
 						folderPath = decodeUrl(value);
+					} else if ("overwrite".equals(fieldName)) {
+						if (value != null && !"".equals(value)) {
+							overwrite = Boolean.parseBoolean(value);
+						}
 					}
 				} else {
 					InputStream content = item.getInputStream();
 					fileSize = item.getSize();
 					fileName = item.getName();
 					
-					fileSize = saveFile(request, space, folderPath, fileName, content, fileSize);
+					fileSize = saveFile(request, space, folderPath, fileName, content, fileSize, overwrite, isPut);
 					UploadResponse resp = new UploadResponse(fileName, fileSize);
 					uploadResps.add(resp);
 				}
@@ -610,28 +633,29 @@ public abstract class AbstractFileController extends BaseController {
 		} catch (ErrorException e) {
 			Error error = e.getError();
 			log.warn("Got error when handling request {} from {}: {}", request.getRequestURI(), WebUtil.getUserAddress(request), error);
-			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle());
+			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle() != null ? error.getTitle() : "failed");
 			uploadResps.add(resp);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
 			log.error("Got exception when handling request {} from {}: {}", request.getRequestURI(), WebUtil.getUserAddress(request), e.getMessage());
 			Error error = Error.internalServerError(e.getMessage());
-			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle());
+			UploadResponse resp = new UploadResponse(fileName, fileSize, error.getTitle() != null ? error.getTitle() : "failed");
 			uploadResps.add(resp);
 		}
 		return uploadResps;
 	}
 	
 	protected long saveFile(HttpServletRequest request, String space, String folderPath, String fileName,
-			InputStream content, long contentLength) {
+			InputStream content, long contentLength, Boolean overwrite, Boolean isPut) {
 		User user = WebUtil.getUser(request);
-		String filePath = FileUtil.getPath(folderPath, fileName);
+		String filePath = PathUtil.combinePath(folderPath, fileName);
 		log.info("User {} save {}:{} size {}", user.toString(), space, filePath, contentLength);
 
 		UploadParams params = new UploadParams(user, space, filePath);
+		params.setOverwrite(overwrite);
 		params.setContent(content);
 		params.setLength(contentLength);
-		MetadataEntry entry = getService().upload(params);
+		MetadataEntry entry = getService().upload(params, isPut);
 		return entry.getBytes();
 	}
 	

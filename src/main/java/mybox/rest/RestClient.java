@@ -55,14 +55,6 @@ public interface RestClient {
 	
 	public <T> T patch(Class<T> clazz, String url, String body, String... headers);
 	
-	/*public <T> T get(String url, String[] headers, Class<T> clazz, boolean hasJsonRoot);
-	
-	public <T, E> E post(String url, String[] headers, T entity, Class<E> clazz, boolean hasJsonRoot);
-	
-	public <T, E> E put(String url, String[] headers, T entity, Class<E> clazz, boolean hasJsonRoot);
-	
-	public <T, E> E patch(String url, String[] headers, T entity, Class<E> clazz, boolean hasJsonRoot);*/
-	
 	public void setRestConnection(RestConnection restConnection);
 	
 	public void setRestResponseValidator(RestResponseValidator restResponseValidator);

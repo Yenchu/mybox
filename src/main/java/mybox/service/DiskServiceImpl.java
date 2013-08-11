@@ -25,12 +25,10 @@ import mybox.model.Link;
 import mybox.model.MetadataEntry;
 import mybox.model.Space;
 import mybox.model.User;
-import mybox.model.dropbox.DeltaPage;
 import mybox.to.ChunkedUploadParams;
 import mybox.to.CopyParams;
 import mybox.to.CreateParams;
 import mybox.to.DeleteParams;
-import mybox.to.DeltaParams;
 import mybox.to.EntryParams;
 import mybox.to.FileOperationResponse;
 import mybox.to.LinkParams;
@@ -121,7 +119,7 @@ public class DiskServiceImpl extends AbstractFileService implements DiskService 
 				}
 			}
 			folderEntry.setContents(entries);
-			customEntries(space, folderEntry);
+			customFolderMetadata(space, folderEntry);
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
@@ -153,7 +151,7 @@ public class DiskServiceImpl extends AbstractFileService implements DiskService 
 			}
 			
 			i++;
-			customEntries(entries);
+			customMetadata(entries);
 			page = new Page<MetadataEntry>(entries);
 			page.setPage(pageable.getPageNumber());
 			page.setPageSize(pageable.getPageSize());
@@ -191,6 +189,10 @@ public class DiskServiceImpl extends AbstractFileService implements DiskService 
 	}
 	
 	public MetadataEntry upload(UploadParams params) {
+		return upload(params, true);
+	}
+	
+	public MetadataEntry upload(UploadParams params, boolean isPut) {
 		String path = params.getPath();
 		path = validatePath(path);
 		InputStream is = params.getContent();
@@ -199,7 +201,7 @@ public class DiskServiceImpl extends AbstractFileService implements DiskService 
 		MetadataEntry entry = null;
 		try {
 			entry = getMetadata(Paths.get(path), false);
-			customEntry(entry);
+			customMetadata(entry);
 		} catch (IOException e) {
 			log.error(e.getMessage(), e);
 		}
