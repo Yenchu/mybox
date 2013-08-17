@@ -43,6 +43,17 @@ public class DropboxController extends AbstractFileController {
 	@Autowired
 	private DropboxService dropboxService;
 	
+	@RequestMapping(value = "/oauth2/code")
+	public String receiveOauth2Code(
+			@RequestParam(value = "code", required = false) String code, 
+			@RequestParam(value = "state", required = false) String state, 
+			HttpServletRequest request) {
+		log.info("Code={} state={}", code, state);
+		User user = getService().getToken(code);
+		WebUtil.setUser(request, user);
+		return "redirect:/db/metadata";
+	}
+	
 	@RequestMapping(value = "/delta", method = RequestMethod.POST)
 	@ResponseBody
 	public DeltaPage<MetadataEntry> delta(

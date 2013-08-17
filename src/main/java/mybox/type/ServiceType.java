@@ -1,10 +1,14 @@
 package mybox.type;
 
-public enum ServiceType {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-	// default service type is empty
-	DISK("dk"), DROPBOX("db");
+public enum ServiceType {
 	
+	DISK("dk"), DROPBOX("db");
+
+	private static final Logger log = LoggerFactory.getLogger(ServiceType.class);
+
 	private final String value;
 	
 	private ServiceType(String value) {
@@ -13,5 +17,16 @@ public enum ServiceType {
 	
 	public String value() {
 		return value;
+	}
+	
+	public ServiceType getServiceType(String value) {
+		if (DROPBOX.value().equalsIgnoreCase(value)) {
+			return DROPBOX;
+		} else if (DISK.value().equalsIgnoreCase(value)) {
+			return DISK;
+		} else {
+			log.error("Can not find service type of {}", value);;
+			return null;
+		}
 	}
 }

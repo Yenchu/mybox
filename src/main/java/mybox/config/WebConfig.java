@@ -45,8 +45,8 @@ public class WebConfig extends WebMvcConfigurerAdapter {
 	
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		AppInterceptor appInterceptor = new AppInterceptor();
-		registry.addInterceptor(appInterceptor);
+		//AppInterceptor appInterceptor = new AppInterceptor();
+		registry.addInterceptor(appInterceptor());
 	}
 	
 	@Override
@@ -92,6 +92,11 @@ public class WebConfig extends WebMvcConfigurerAdapter {
         viewResolver.setOrder(1);
         return viewResolver;
     }
+	
+	@Bean
+	public AppInterceptor appInterceptor() {
+		return new AppInterceptor();
+	}
 	
 	/**
 	 * An example for converting request parameters to Spring PageRequest.

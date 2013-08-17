@@ -102,7 +102,7 @@ public abstract class AbstractFileController extends BaseController {
 			@RequestParam(value = "space", required = false) String spaceId,
 			HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
-		String folder = getRestOfPath(request, getServicePathLength() + 9); // 8 + 9: sum of length(/dropbox + /metadata)
+		String folder = getRestOfPath(request, getServicePathLength() + 9);
 		log.debug("User {} list {}:{}", user.getName(), (spaceId != null ? spaceId : "root"), folder);
 		
 		Params params = new Params();

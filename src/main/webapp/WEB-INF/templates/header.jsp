@@ -25,7 +25,7 @@
 					</li>
 					<li><a href="${contextPath}/logout">Logout</a></li>
 				</ul>
-				<div class="dropdown pull-right">
+				<div class="pull-right">
 					<i class="icon-user"></i> ${user.name}
 				</div>
 			</div>

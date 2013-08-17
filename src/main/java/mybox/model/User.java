@@ -10,6 +10,8 @@ public class User implements Serializable {
 
 	protected String ip;
 
+	protected String accessToken;
+
 	public String toString() {
 		StringBuilder buf = new StringBuilder();
 		buf.append("id=").append(id);
@@ -40,5 +42,13 @@ public class User implements Serializable {
 
 	public void setIp(String ip) {
 		this.ip = ip;
+	}
+
+	public String getAccessToken() {
+		return accessToken;
+	}
+
+	public void setAccessToken(String token) {
+		this.accessToken = token;
 	}
 }

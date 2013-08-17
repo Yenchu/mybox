@@ -2,7 +2,7 @@ package mybox.service.support;
 
 import static mybox.service.support.DropboxUtil.getChunkedUploadUrl;
 import static mybox.service.support.DropboxUtil.getCommitChunkedUploadUrl;
-import static mybox.service.support.DropboxUtil.getSignedHeaders;
+import static mybox.service.support.DropboxUtil.getAuthHeaders;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -44,7 +44,7 @@ public class ChunkedUploader {
 		InputStream stream = params.getContent();
 		long targetLength = params.getLength();
 		int chunkSize = params.getChunkSize();
-		String[] headers = getSignedHeaders(user);
+		String[] headers = getAuthHeaders(user);
 		
 		String uploadId = null;
 		long offset = 0;
