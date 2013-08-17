@@ -10,6 +10,9 @@
 			</a>
 			<a class="brand" href="#">My Box</a>
 			<div class="nav-collapse collapse">
+				<p class="navbar-text pull-right">
+					<i class="icon-user"></i> ${user.name}
+				</p>
 				<ul class="nav">
 					<li id="topnav-home"><a href="${service}/">Home</a></li>
 					<li id="topnav-website"><a href="${service}/website/${space.id}/html/index.html">Pages</a></li>
@@ -25,9 +28,6 @@
 					</li>
 					<li><a href="${contextPath}/logout">Logout</a></li>
 				</ul>
-				<div class="pull-right">
-					<i class="icon-user"></i> ${user.name}
-				</div>
 			</div>
 		</div>
 	</div>
