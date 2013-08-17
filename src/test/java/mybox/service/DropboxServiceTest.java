@@ -39,11 +39,6 @@ public class DropboxServiceTest extends SpringUnitTest {
 	}
 	
 	//@Test
-	public void auth() {
-		DropboxUtil.auth();
-	}
-	
-	//@Test
 	public void getFiles() {
 		User user = new User();
 		String root = "dropbox";
