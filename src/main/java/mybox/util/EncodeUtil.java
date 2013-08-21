@@ -7,9 +7,9 @@ import java.net.URLEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UrlEncodeUtil {
+public class EncodeUtil {
 	
-	private static final Logger log = LoggerFactory.getLogger(UrlEncodeUtil.class);
+	private static final Logger log = LoggerFactory.getLogger(EncodeUtil.class);
 
 	public static String[] encodedHeaders(String... headers) {
 		String[] encodedHeaders = null;
@@ -77,5 +77,21 @@ public class UrlEncodeUtil {
 			log.error(e.getMessage(), e);
 			return str;
 		}
+	}
+	
+	/**
+	 * Tomcat servlet container uses ISO-8859-1 to decode URL.
+	 * @param id
+	 * @return
+	 */
+	public static String iso88591ToUTF8(String encodedStr) {
+		String str = null;
+		try {
+			str = new String(encodedStr.getBytes("ISO-8859-1"), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			log.error(e.getMessage(), e);
+			str = encodedStr;
+		}
+		return str;
 	}
 }

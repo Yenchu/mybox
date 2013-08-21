@@ -46,11 +46,10 @@ function createSharesTable(tableId, localData) {
 var FileTable = (function() {
 	
 	var FileType = {FOLDER:'folder', FILE:'file'}, Notation = {WRITE:2, READ:4};
-	var loadFolderListener = null, spaceId = null, rootFolder = null, currentFolder = null;
+	var loadFolderListener = null, rootFolder = null, currentFolder = null;
 	var $table = null, options = null, isLoadingSubFolder = false, isLoadingSubFolderInSearch = false, isLoadingFiles = false, isSearching = false, isDragging = false;
 	
 	function init(options) {
-		spaceId = options.spaceId;
 		rootFolder = options.rootFolder;
 		currentFolder = options.currentFolder;
 	}
@@ -78,7 +77,7 @@ var FileTable = (function() {
 			isMultiSelect: true,
 			loadOnce: true,
 			remote: {url:'${service}/metadata', editUrl:'${service}/fileops/rename', deleteUrl:'${service}/fileops/delete'
-				, params:{space:spaceId, folder:currentFolder}, method:'POST'}
+				, params:{folder:currentFolder}, method:'POST'}
 		};
 		$table = createTable(options, dblClickRow);
 	}
@@ -86,7 +85,7 @@ var FileTable = (function() {
 	function createSearchTable(query) {
 		if (isSearching) {
 			var options = $table.pagingtable('getOptions');
-			options.remote.params = {space:spaceId, folder:currentFolder, query:query};
+			options.remote.params = {folder:currentFolder, query:query};
 			reload();
 			return;
 		}
@@ -115,7 +114,7 @@ var FileTable = (function() {
 			isMultiSelect: true,
 			loadOnce: true,
 			remote: {url:'${service}/search', editUrl:'${service}/fileops/rename', deleteUrl:'${service}/fileops/delete'
-				, params:{space:spaceId, folder:currentFolder, query:query}, method:'POST'}
+				, params:{folder:currentFolder, query:query}, method:'POST'}
 		};
 		$table = createTable(options, dblClickRowInSearch);
 	}
@@ -165,7 +164,7 @@ var FileTable = (function() {
 		} else {
 			var thumbExists = rowData.thumbExists;
 			if (thumbExists === true) {
-				rt = '<div><img src="${service}/thumbnails/' + spaceId + rowData.path + '" width="16" height="16"/> ' + fileName + '</div>';
+				rt = '<div><img src="${service}/thumbnails' + rowData.path + '" width="16" height="16"/> ' + fileName + '</div>';
 			} else {
 				rt = '<div><span class="dynatree-icon"></span> ' + fileName + '</div>';
 			}
@@ -266,7 +265,7 @@ var FileTable = (function() {
 	
 	function loadFiles() {
 		var options = $table.pagingtable('getOptions');
-		options.remote.params = {space:spaceId, folder:currentFolder};
+		options.remote.params = {folder:currentFolder};
 		reload();
 	}
 
@@ -299,7 +298,7 @@ var FileTable = (function() {
 		}
 		
 		var url = '${service}/files';
-		location.href = url + '/' + spaceId + rowData.path;
+		location.href = url + rowData.path;
 	}
 
 	function newFolder() {
@@ -347,10 +346,7 @@ var FileTable = (function() {
 			debugLevel: 0,
 			initAjax: {
 				url: '${service}/roottree',
-				data: {
-					'space': spaceId,
-					'folder': rootFolder
-				}
+				data: {'folder': rootFolder}
 			},
 			keyboard: false,
 			minExpandLevel: 2,
@@ -358,10 +354,7 @@ var FileTable = (function() {
 			onLazyRead: function(node) {
 				node.appendAjax({
 					url: '${service}/dirtree',
-					data: {
-						'space': spaceId,
-						'folder': node.data.id
-					}
+					data: {'folder': node.data.id}
 				});
 			},
 			onDblClick: function(node) {
@@ -387,11 +380,11 @@ var FileTable = (function() {
 	}
 
 	function doMoveFiles(srcFiles, destFolder) {
-		operateFile('Moving', '${service}/fileops/move', {space:spaceId, srcFiles:srcFiles, destFolder:destFolder});
+		operateFile('Moving', '${service}/fileops/move', {srcFiles:srcFiles, destFolder:destFolder});
 	}
 
 	function doCopyFiles(srcFiles, destFolder) {
-		operateFile('Copying', '${service}/fileops/copy', {space:spaceId, srcFiles:srcFiles, destFolder:destFolder});
+		operateFile('Copying', '${service}/fileops/copy', {srcFiles:srcFiles, destFolder:destFolder});
 	}
 
 	function operateFile(opeName, url, data) {
@@ -447,7 +440,7 @@ var FileTable = (function() {
 
 		$modal.attr('disabled', false).off('click', '.confirm').on('click', '.confirm', function() {
 			$(this).attr('disabled', true);
-			operateFile('Deleting', '${service}/fileops/delete', {space:spaceId, files:selFiles});
+			operateFile('Deleting', '${service}/fileops/delete', {files:selFiles});
 		});
 		$modal.modal('show');
 	}
@@ -466,18 +459,17 @@ var FileTable = (function() {
 	
 	function getRevisions() {
 		var rowData = getSelectedRowData();
-		var filePath = rowData.path;
-		var fileName = rowData.name;
 		$.ajax({
-			url: '${service}/revisions/' + spaceId + filePath
+			url: '${service}/revisions' + rowData.path
 		}).done(function(resp) {
-			displayRevisions(fileName, resp);
+			displayRevisions(rowData, resp);
 		}).fail(function() {
 			error('Getting revisions failed.');
 		});
 	}
 	
-	function displayRevisions(fileName, respPage) {
+	function displayRevisions(rowData, respPage) {
+		var fileName = rowData.name;
 		var $modal = $('#file-modal');
 		var title = 'Version history of "' + fileName + '"';
 		$modal.find('.modal-header h3').html(title);
@@ -487,22 +479,21 @@ var FileTable = (function() {
 		$('#restore-form').html(respPage);
 
 		$modal.attr('disabled', false).off('click', '.confirm').on('click', '.confirm', function() {
-			$(this).attr('disabled', true);
-			restoreFile();
+			restoreFile(rowData);
 		});
 		$modal.modal('show');
 	}
 	
-	function restoreFile() {
+	function restoreFile(rowData) {
 		$.ajax({
-			url: '${service}/restore',
+			url: '${service}/restore' + rowData.path,
 			data: $('#restore-form').serialize(),
 			type: 'POST'
 		}).always(function() {
 			$('#file-modal').modal('hide');
 			loadFiles();
 		}).done(function(resp) {
-			success('File ' + resp.name + ' restored.');
+			success('File ' + rowData.name + ' restored.');
 		}).fail(function() {
 			error('Restoring file failed.');
 		});
@@ -511,130 +502,12 @@ var FileTable = (function() {
 	function linkFile() {
 		var rowData = getSelectedRowData();
 		$.ajax({
-			url: '${service}/links',
-			data: {space:spaceId, file:rowData.path},
+			url: '${service}/shares' + rowData.path,
 			type: 'POST'
 		}).done(function(resp) {
 			location.href = resp.url;
 		}).fail(function() {
 			error('Linking file failed.');
-		});
-	}
-	
-	function getShares() {
-		var rowData = getSelectedRowData();
-		$.ajax({
-			url: '${service}/shares',
-			data: {space:spaceId, file:rowData.path}
-		}).done(function(resp) {
-			displayShares(rowData, resp);
-		}).fail(function() {
-			error('Getting shared files failed.');
-		});
-	}
-
-	function displayShares(rowData, members) {
-		var $modal = $('#file-modal');
-		$modal.find('.modal-header h3').html('Share File');
-		
-		var view = $('#share-template').html();
-		$modal.find('.modal-body').html(view);
-		
-		var $sharesTable = createSharesTable('shares-table', {records: members});
-		//var $usersTable = createSimpleUsersTable('users-table');
-		
-		var readOnlyShares = [];
-		$('#read-only-btn').off('click').on('click', function() {
-			//readOnlyShares = addSharing($usersTable, $sharesTable, rowData, Notation.READ);
-			selectUsers($modal);
-		});
-		var readWriteShares = [];
-		$('#read-write-btn').off('click').on('click', function() {
-			readWriteShares = addSharing($usersTable, $sharesTable, rowData, Notation.WRITE);
-		});
-		
-		$modal.attr('disabled', false).off('click', '.confirm').on('click', '.confirm', function() {
-			$(this).attr('disabled', true);
-			var updatedShares = $.merge($.merge([],readOnlyShares), readWriteShares);
-			shareFile(updatedShares);
-		});
-		$modal.modal('show');
-	}
-	
-	function selectUsers($shareModal) {
-		var $modal = $('#user-modal');
-		$modal.find('.modal-header h3').html('Select Users');
-		
-		var view = '<table id="users-table" class="table table-bordered table-striped table-condensed"></table>';
-		$modal.find('.modal-body').html(view);
-		var $usersTable = createSimpleUsersTable('users-table');
-		
-		$modal.off('hidden').on('hidden', function() {
-			$(this).find('.modal-body').empty();
-			$(this).off('click', '.confirm');
-			$shareModal.modal('show');
-		});
-		$modal.off('show');
-		$modal.modal('show');
-	}
-	
-	function addSharing($usersTable, $sharesTable, rowData, notatopn) {
-		var updatedShares = [];
-		var shares = $sharesTable.pagingtable('getAllRowData');
-		var newMembers = $usersTable.pagingtable('getMultiSelectedRowData');
-		for (var i = 0, len = newMembers.length; i < len; i++) {
-			var newMember = newMembers[i];
-			var isOld = false;
-			for (var j = 0; j < shares.length; j++) {
-				var share = shares[j];
-				if (newMember.id == share.toUserId) {
-					isOld = true;
-					console.log(notatopn + ' vs ' + share.notation);
-					if (notatopn != share.notation) {
-						console.log(newMember.id + ' will be updated permission to READ.');
-						share.notation = notatopn;
-						updatedShares.push(share);
-					} else {
-						console.log(newMember.id + ' won\'t be updated permission.');
-					}
-					break;
-				}
-			}
-			if (!isOld) {
-				//isNew:true, 
-				var newShare = {id:newMember.id, filePath:rowData.path, isDir:isFolder(rowData), notation:notatopn, toUserId:newMember.id, toUserName:newMember.name};
-				shares.push(newShare);
-				updatedShares.push(newShare);
-			}
-		}
-		$sharesTable.pagingtable('setRowDataMap', shares).pagingtable('reload');
-		return updatedShares;
-	}
-	
-	function shareFile(updatedShares) {
-		$.ajax({
-			url: '${service}/shares',
-			data: JSON.stringify(updatedShares),
-			contentType: 'application/json;charset=UTF-8',
-			type: 'POST'
-		}).done(function(resp) {
-			$('#file-modal').modal('hide');
-			success('Sharing file success.');
-		}).fail(function() {
-			error('Sharing file failed.');
-		});
-	}
-	function shareFileTmp(userId, permission) {
-		var rowData = getSelectedRowData();
-		var isDir = isFolder(rowData);
-		$.ajax({
-			url: '${service}/shares',
-			data: {space:spaceId, file:rowData.path, isDir:isDir, user:userId, permission:permission},
-			type: 'POST'
-		}).done(function(resp) {
-			displaySharing(resp);
-		}).fail(function() {
-			error('Sharing file failed.');
 		});
 	}
 	

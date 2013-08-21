@@ -57,10 +57,4 @@ public class AppConfig implements AsyncConfigurer {
 		velocityEngine.setVelocityProperties(prop);
 		return velocityEngine;
 	}
-	
-	/*@Bean
-	@Scope("prototype")
-    public RestClient restClient() {
-        return new RestClientImpl();
-    }*/
 }

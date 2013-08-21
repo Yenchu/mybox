@@ -9,12 +9,8 @@ public class EntryParams extends PathParams {
 	public EntryParams() {
 	}
 	
-	public EntryParams(String root, String path) {
-		super(root, path);
-	}
-	
-	public EntryParams(User user, String root, String path) {
-		super(user, root, path);
+	public EntryParams(User user, String path) {
+		super(user, path);
 	}
 
 	public String getRev() {

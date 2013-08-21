@@ -17,6 +17,11 @@ public class SystemProp {
 		String value = env.getProperty("dropbox.app.secret");
 		return value;
 	}
+	
+	public String getDropboxAppPermissions() {
+		String value = env.getProperty("dropbox.app.permissions");
+		return value;
+	}
 
 	public String getDropboxOauth2RedirectUri() {
 		String value = env.getProperty("dropbox.oauth2.redirect.uri");

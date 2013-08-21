@@ -17,12 +17,8 @@ public class UploadParams extends PathParams {
 	public UploadParams() {
 	}
 	
-	public UploadParams(String root, String path) {
-		super(root, path);
-	}
-	
-	public UploadParams(User user, String root, String path) {
-		super(user, root, path);
+	public UploadParams(User user, String path) {
+		super(user, path);
 	}
 
 	public InputStream getContent() {

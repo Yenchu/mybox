@@ -42,7 +42,7 @@ var FileUpload = (function() {
 			},
 			submit: function(e, data) {
 				var file = data.files[0];
-				data.formData = {space:options.spaceId, folder:options.getCurrentFolder(), fileSize:file.size};
+				data.formData = {folder:options.getCurrentFolder(), fileSize:file.size};
 				return true;
 			},
 			progress: function (e, data) {

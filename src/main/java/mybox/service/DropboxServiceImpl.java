@@ -1,10 +1,24 @@
 package mybox.service;
 
-import static mybox.service.support.DropboxUtil.*;
+import static mybox.util.DropboxUtil.getAuthHeaders;
+import static mybox.util.DropboxUtil.getCopyUrl;
+import static mybox.util.DropboxUtil.getCreateFolderUrl;
+import static mybox.util.DropboxUtil.getDeleteUrl;
+import static mybox.util.DropboxUtil.getDeltaUrl;
+import static mybox.util.DropboxUtil.getFilePostUrl;
+import static mybox.util.DropboxUtil.getFilePutUrl;
+import static mybox.util.DropboxUtil.getFileUrl;
+import static mybox.util.DropboxUtil.getMediaUrl;
+import static mybox.util.DropboxUtil.getMetadataUrl;
+import static mybox.util.DropboxUtil.getMoveUrl;
+import static mybox.util.DropboxUtil.getRestoreUrl;
+import static mybox.util.DropboxUtil.getRevisionUrl;
+import static mybox.util.DropboxUtil.getSearchUrl;
+import static mybox.util.DropboxUtil.getShareUrl;
+import static mybox.util.DropboxUtil.getThumbnailUrl;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,21 +27,17 @@ import java.util.concurrent.Future;
 import mybox.config.SystemProp;
 import mybox.exception.Error;
 import mybox.exception.ErrorException;
-import mybox.model.AccountInfo;
+import mybox.json.JsonConverter;
 import mybox.model.DeltaPage;
-import mybox.model.DropboxUser;
 import mybox.model.FileEntry;
 import mybox.model.Link;
 import mybox.model.MetadataEntry;
-import mybox.model.Space;
-import mybox.model.Token;
 import mybox.model.User;
 import mybox.rest.RestClient;
 import mybox.rest.RestClientFactory;
 import mybox.rest.RestResponse;
 import mybox.service.support.ChunkedUploader;
 import mybox.service.support.DeltaResponseHandler;
-import mybox.service.support.DropboxUtil;
 import mybox.service.support.MetadataListResponseHandler;
 import mybox.task.HttpPostWorker;
 import mybox.to.BulkParams;
@@ -39,10 +49,8 @@ import mybox.to.DeltaParams;
 import mybox.to.EntryParams;
 import mybox.to.FileOperationResponse;
 import mybox.to.LinkParams;
-import mybox.to.LoginParams;
 import mybox.to.MetadataParams;
 import mybox.to.MoveParams;
-import mybox.to.Params;
 import mybox.to.PathParams;
 import mybox.to.RevisionParams;
 import mybox.to.SearchParams;
@@ -50,16 +58,15 @@ import mybox.to.ThumbnailParams;
 import mybox.to.UploadParams;
 import mybox.util.ParamsUtil;
 import mybox.util.PathUtil;
+import mybox.util.EncodeUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.dropbox.core.util.StringUtil;
-
 @Service
-public class DropboxServiceImpl extends AbstractFileService implements DropboxService {
+public class DropboxServiceImpl implements DropboxService {
 
 	private static final Logger log = LoggerFactory.getLogger(DropboxServiceImpl.class);
 
@@ -75,91 +82,28 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 
 	private MetadataListResponseHandler metadataListResponseHandler = new MetadataListResponseHandler();
 	
-	public User getToken(String code) {
-		String[] params = new String[]{"code", code, "grant_type", "authorization_code", 
-				"redirect_uri", systemProp.getDropboxOauth2RedirectUri()};
-		List<String> fields = Arrays.asList(params);
-
-		String credentials = systemProp.getDropboxAppKey() + ":" + systemProp.getDropboxAppSecret();
-        String base64Credentials = StringUtil.base64Encode(StringUtil.stringToUtf8(credentials));
-        String[] headers = {"Authorization", "Basic " + base64Credentials};
-        
-		String url = getOauth2TokenUrl();
-		Token token = restClient.post(Token.class, url, fields, headers);
-		log.debug("token: {}", token);
-		
-		DropboxUser user = new DropboxUser();
-		user.setAccessToken(token.getAccessToken());
-		
-		AccountInfo accountInfo = getAccountInfo(user);
-		user.setAccountInfo(accountInfo);
-		return user;
-	}
-	
-	public AccountInfo getAccountInfo(DropboxUser user) {
-		String url = getAccountInfoUrl();
-		String[] headers = getAuthHeaders(user);
-		AccountInfo accountInfo = restClient.get(AccountInfo.class, url, headers);
-		log.debug("accountInfo: {}", accountInfo);
-		return accountInfo;
-	}
-
-	public User auth(LoginParams params) {
-		//* just for test
-		if (!params.getPassword().equals("cloud")) {
-			log.info("{} login failed!", params.getUsername());
-			return null;
-		}
-
-		DropboxUser user = getDefaultUser();
-		user.setName(params.getUsername());
-		user.setIp(params.getIp());
-		return user;
-	}
-	
-	public Space getDefaultSpace(Params params) {
-		//* for demo: Dropbox only have a space
-		Space space = new Space();
-		space.setId(getRootId());
-		space.setName(getRootName());
-		space.setRoot("/");
-		return space;
-	}
-	
-	public Space getSpace(Params params, String spaceId) {
-		return getDefaultSpace(params);
-	}
-	
-	public Space getSpace(PathParams params) {
-		return getSpace(params, params.getRoot());
-	}
-
 	public MetadataEntry getFiles(PathParams params) {
-		DropboxUser user = getUser(params);
-		Space space = getSpace(params);
-		String root = params.getRoot();
+		User user = params.getUser();
 		String path = params.getPath();
 		
-		String url = getMetadataUrl(root, path);
-		String[] headers = getAuthHeaders(user);
+		String url = getMetadataUrl(path);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 		
 		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
-		customFolderMetadata(space, entry);
+		customFolderMetadata(entry);
 		return entry;
 	}
 
 	public MetadataEntry getFiles(MetadataParams params) {
-		DropboxUser user = getUser(params);
-		Space space = getSpace(params);
-		String root = params.getRoot();
+		User user = params.getUser();
 		String path = params.getPath();
 		String[] qryStr = ParamsUtil.getQueryString(params);
 		
-		String url = getMetadataUrl(root, path, qryStr);
-		String[] headers = getAuthHeaders(user);
+		String url = getMetadataUrl(path, qryStr);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 		
 		MetadataEntry entry = restClient.get(MetadataEntry.class, url, headers);
-		customFolderMetadata(space, entry);
+		customFolderMetadata(entry);
 		return entry;
 	}
 
@@ -171,13 +115,12 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 	}
 
 	public FileEntry download(EntryParams params) {
-		DropboxUser user = DropboxUtil.getUser(params);
-		String root = params.getRoot();
+		User user = params.getUser();
 		String path = params.getPath();
 		String[] qryStr = ParamsUtil.getQueryString(params);
 
-		String url = getFileUrl(root, path, qryStr);
-		String[] headers = getAuthHeaders(user);
+		String url = getFileUrl(path, qryStr);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 
 		RestResponse<InputStream> restResponse = restClient.getStream(url, headers);
 		FileEntry entry = convertDownloadResponse(restResponse, "x-dropbox-metadata");
@@ -185,13 +128,12 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 	}
 
 	public InputStream getThumbnail(ThumbnailParams params) {
-		DropboxUser user = getUser(params);
-		String root = params.getRoot();
+		User user = params.getUser();
 		String path = params.getPath();
 		String[] qryStr = ParamsUtil.getQueryString(params);
 
-		String url = getThumbnailUrl(root, path, qryStr);
-		String[] headers = getAuthHeaders(user);
+		String url = getThumbnailUrl(path, qryStr);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 
 		RestResponse<InputStream> restResponse = restClient.getStream(url, headers);
 		return restResponse.getBody();
@@ -202,20 +144,19 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 	}
 
 	public MetadataEntry upload(UploadParams params, boolean isPut) {
-		DropboxUser user = getUser(params);
-		String root = params.getRoot();
+		User user = params.getUser();
 		String path = params.getPath();
 		InputStream is = params.getContent();
 		long length = params.getLength();
 		String[] qryStr = ParamsUtil.getQueryString(params);
 
-		String[] headers = getAuthHeaders(user);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 		MetadataEntry entry = null;
 		if (isPut) {
-			String url = getFilePutUrl(root, path, qryStr);
+			String url = getFilePutUrl(path, qryStr);
 			entry = restClient.put(MetadataEntry.class, url, is, length, headers);
 		} else {
-			String url = getFilePostUrl(root, path, qryStr);
+			String url = getFilePostUrl(path, qryStr);
 			entry = restClient.post(MetadataEntry.class, url, is, length, headers);
 		}
 		customMetadata(entry);
@@ -236,9 +177,9 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 	}
 
 	public DeltaPage<MetadataEntry> delta(DeltaParams params) {
-		DropboxUser user = getUser(params);
+		User user = params.getUser();
 		String url = getDeltaUrl();
-		String[] headers = getAuthHeaders(user);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 		return getDelta(params, url, headers);
 	}
 
@@ -258,12 +199,11 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 	}
 
 	public List<MetadataEntry> getRevisions(RevisionParams params) {
-		DropboxUser user = getUser(params);
-		String root = params.getRoot();
+		User user = params.getUser();
 		String path = params.getPath();
 
-		String url = getRevisionUrl(root, path);
-		String[] headers = getAuthHeaders(user);
+		String url = getRevisionUrl(path);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 
 		List<MetadataEntry> entries = restClient.get(metadataListResponseHandler, url, headers);
 		customMetadata(entries);
@@ -271,13 +211,12 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 	}
 
 	public MetadataEntry restore(EntryParams params) {
-		DropboxUser user = getUser(params);
-		String root = params.getRoot();
+		User user = params.getUser();
 		String path = params.getPath();
 		List<String> fields = ParamsUtil.getParamList(params);
 
-		String url = getRestoreUrl(root, path);
-		String[] headers = getAuthHeaders(user);
+		String url = getRestoreUrl(path);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 
 		MetadataEntry entry = restClient.post(MetadataEntry.class, url, fields, headers);
 		customMetadata(entry);
@@ -285,39 +224,36 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 	}
 
 	public Link link(LinkParams params) {
-		DropboxUser user = getUser(params);
-		String root = params.getRoot();
+		User user = params.getUser();
 		String path = params.getPath();
 		List<String> fields = ParamsUtil.getParamList(params);
 
-		String url = getShareUrl(root, path);
-		String[] headers = getAuthHeaders(user);
+		String url = getShareUrl(path);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 
 		Link link = restClient.post(Link.class, url, fields, headers);
 		return link;
 	}
 
 	public Link media(PathParams params) {
-		DropboxUser user = getUser(params);
-		String root = params.getRoot();
+		User user = params.getUser();
 		String path = params.getPath();
 		List<String> fields = ParamsUtil.getParamList(params);
 
-		String url = getMediaUrl(root, path);
-		String[] headers = getAuthHeaders(user);
+		String url = getMediaUrl(path);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 
 		Link link = restClient.post(Link.class, url, fields, headers);
 		return link;
 	}
 
 	public List<MetadataEntry> search(SearchParams params) {
-		DropboxUser user = getUser(params);
-		String root = params.getRoot();
+		User user = params.getUser();
 		String path = params.getPath();
 		List<String> fields = ParamsUtil.getParamList(params);
 		
-		String url = getSearchUrl(root, path);
-		String[] headers = getAuthHeaders(user);
+		String url = getSearchUrl(path);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 
 		List<MetadataEntry> entries = restClient.post(metadataListResponseHandler, url, fields, headers);
 		customMetadata(entries);
@@ -325,11 +261,11 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 	}
 
 	public FileOperationResponse createFolder(CreateParams params) {
-		DropboxUser user = getUser(params);
+		User user = params.getUser();
 		List<String> fields = ParamsUtil.getParamList(params);
 
 		String url = getCreateFolderUrl();
-		String[] headers = getAuthHeaders(user);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 
 		MetadataEntry entry = restClient.post(MetadataEntry.class, url, fields, headers);
 		customMetadata(entry);
@@ -363,8 +299,8 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 			throw new ErrorException(Error.badRequest("No any selected files!"));
 		}
 
-		DropboxUser user = getUser(params);
-		String[] headers = getAuthHeaders(user);
+		User user = params.getUser();
+		String[] headers = getAuthHeaders(user.getAccessToken());
 
 		Map<String, Future<MetadataEntry>> futures = new LinkedHashMap<String, Future<MetadataEntry>>();
 		String[] paths = params.getPaths();
@@ -397,19 +333,114 @@ public class DropboxServiceImpl extends AbstractFileService implements DropboxSe
 		return result;
 	}
 	
-	protected void customMetadata(MetadataEntry entry) {
-		super.customMetadata(entry);
+	protected List<MetadataEntry> getFolders(List<MetadataEntry> entries) {
+		List<MetadataEntry> folderEntries = new ArrayList<MetadataEntry>();
+		for (MetadataEntry entry : entries) {
+			if (entry.getIsDir()) {
+				folderEntries.add(entry);
+			}
+		}
+		return folderEntries;
+	}
+	
+	protected FileEntry convertDownloadResponse(RestResponse<InputStream> restResponse, String header) {
+		InputStream content = restResponse.getBody();
+		FileEntry fileEntry = new FileEntry();
+		fileEntry.setContent(content);
 		
-		String modified = entry.getModified();
-		if (modified == null || modified.equals("")) {
+		String metadataStr = restResponse.getHeader(header);
+		if (metadataStr != null && !"".equals(metadataStr)) {
+			log.debug("Get header {}:\n{}", header, metadataStr);
+			MetadataEntry metadataEntry = JsonConverter.fromJson(metadataStr, MetadataEntry.class);
+			customMetadata(metadataEntry);
+			fileEntry.setMetadata(metadataEntry);
+			fileEntry.setFileSize(metadataEntry.getBytes());
+		}
+
+		String contentType = restResponse.getHeader("Content-Type");
+		if (contentType != null && !"".equals(contentType)) {
+			String[] splits = contentType.split(";");
+			if (splits.length > 0) {
+				String mimeType = splits[0].trim();
+				fileEntry.setMimeType(mimeType);
+			}
+			if (splits.length > 1) {
+				splits = splits[1].split("=");
+				if (splits.length > 1) {
+					String charset = splits[1].trim();
+					fileEntry.setCharset(charset);
+				}
+			}
+		}
+		return fileEntry;
+	}
+	
+	protected void customFolderMetadata(MetadataEntry folderEntry) {
+		if (folderEntry == null) {
 			return;
 		}
 		
-		// modified data format: Tue, 16 Oct 2012 10:27:40 +0000
-		int idx = modified.lastIndexOf("+");
-		if (idx > 0) {
-			modified = modified.substring(0, idx - 1);
-			entry.setModified(modified);
-		}		
+		String path = folderEntry.getPath();
+		if (PathUtil.isRoot(path)) {
+			folderEntry.setId(EncodeUtil.encode(path));
+			folderEntry.setName(path);
+			folderEntry.setLocation("");
+		} else {
+			customMetadata(folderEntry);
+		}
+		
+		List<MetadataEntry> entries = folderEntry.getContents();
+		if (entries == null || entries.size() <= 0) {
+			return;
+		}
+		customMetadata(entries);
+	}
+	
+	protected void customMetadata(List<MetadataEntry> entries) {
+		for (MetadataEntry entry: entries) {
+			customMetadata(entry);
+		}
+	}
+	
+	protected void customMetadata(MetadataEntry entry) {
+		//{"hash": "c89bb0d81ea153f4c3c25be81c4e245f", "bytes": 0, "thumb_exists": false, "path": "/", "is_dir": true, 
+		//"icon": "folder_public", "rev": "c89bb0d81ea153f4c3c25be81c4e245f", "modified": "Mon, 01 Apr 2013 23:42:29 +0000", "size": "0 Bytes", "root": "File Cruiser" 
+		//"contents": [{"size": "1.0 MB", "store_size": "1.0 MB", "encrypt": false, "rev": "303b7c009b01907f563749361efe2e6c", "thumb_exists": false, 
+		//"bytes": 1048576, "modified": "Tue, 02 Apr 2013 06:42:29 +0000", "store_bytes": 1048576, "path": "/size1.txt", "is_dir": false, "icon": "page_white_acrobat", "root": "File Cruiser", "compress": false}]}
+
+		String path = entry.getPath();
+		if (path != null && !path.equals("")) {
+			String id = EncodeUtil.encode(path);
+			entry.setId(id);
+
+			int idx = path.lastIndexOf('/');
+			String location = null;
+			String name = null;
+			if (idx > 0) {
+				location = path.substring(0, idx);
+				name = path.substring(idx + 1);
+			} else if (idx == 0) {
+				location = "/";
+				name = path.substring(1);
+			} else {
+				location = "";
+				name = path;
+			}
+			entry.setLocation(location);
+			entry.setName(name);
+		} else {
+			log.warn("Path is empty!");
+			return;
+		}
+		
+		String modified = entry.getModified();
+		if (modified != null && !modified.equals("")) {
+			// modified data format: Tue, 16 Oct 2012 10:27:40 +0000
+			int idx = modified.lastIndexOf("+");
+			if (idx > 0) {
+				modified = modified.substring(0, idx - 1);
+				entry.setModified(modified);
+			}
+		}
 	}
 }

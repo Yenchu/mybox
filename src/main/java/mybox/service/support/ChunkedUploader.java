@@ -1,8 +1,8 @@
 package mybox.service.support;
 
-import static mybox.service.support.DropboxUtil.getChunkedUploadUrl;
-import static mybox.service.support.DropboxUtil.getCommitChunkedUploadUrl;
-import static mybox.service.support.DropboxUtil.getAuthHeaders;
+import static mybox.util.DropboxUtil.getAuthHeaders;
+import static mybox.util.DropboxUtil.getChunkedUploadUrl;
+import static mybox.util.DropboxUtil.getCommitChunkedUploadUrl;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,8 +12,8 @@ import java.util.List;
 
 import mybox.json.JsonConverter;
 import mybox.model.ChunkedUploadResponse;
-import mybox.model.DropboxUser;
 import mybox.model.MetadataEntry;
+import mybox.model.User;
 import mybox.rest.RestClient;
 import mybox.rest.RestResponse;
 import mybox.rest.RestResponseConverter;
@@ -40,11 +40,11 @@ public class ChunkedUploader {
 	}
 
 	public MetadataEntry upload(ChunkedUploadParams params) throws IOException, InterruptedException {
-		DropboxUser user = DropboxUtil.getUser(params);
+		User user = params.getUser();
 		InputStream stream = params.getContent();
 		long targetLength = params.getLength();
 		int chunkSize = params.getChunkSize();
-		String[] headers = getAuthHeaders(user);
+		String[] headers = getAuthHeaders(user.getAccessToken());
 		
 		String uploadId = null;
 		long offset = 0;
@@ -77,10 +77,9 @@ public class ChunkedUploader {
 			uploadId = resp.getUploadId();
 		}
 		
-		String root = params.getRoot();
 		String path = params.getPath();
 		List<String> qryStr = ParamsUtil.getParamList(params);
-		MetadataEntry entry = commit(headers, root, path, qryStr, uploadId);
+		MetadataEntry entry = commit(headers, path, qryStr, uploadId);
 		return entry;
 	}
 
@@ -99,12 +98,12 @@ public class ChunkedUploader {
 		return resp;
 	}
 	
-	protected MetadataEntry commit(String[] headers, String root, String path, List<String> qryStrList, String uploadId) {
+	protected MetadataEntry commit(String[] headers, String path, List<String> qryStrList, String uploadId) {
 		qryStrList.add("upload_id");
 		qryStrList.add(uploadId);
 		String[] qryStr = qryStrList.toArray(new String[qryStrList.size()]);
 		
-		String url = getCommitChunkedUploadUrl(root, path, qryStr);
+		String url = getCommitChunkedUploadUrl(path, qryStr);
 		log.debug("Commit chunked upload url: {}", url);
 		
 		MetadataEntry entry = restClient.post(MetadataEntry.class, url, headers);

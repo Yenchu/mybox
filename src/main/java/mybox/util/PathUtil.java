@@ -10,18 +10,18 @@ public class PathUtil {
 	
 	public static String getUrl(String url, String resource, String... qryStr) {
 		StringBuilder buf = new StringBuilder();
-		buf.append(url).append("/").append(UrlEncodeUtil.encodeUrl(resource));
+		buf.append(url).append("/").append(EncodeUtil.encodeUrl(resource));
 		if (qryStr != null && qryStr.length > 0) {
-			buf.append("?").append(UrlEncodeUtil.encodeQueryString(qryStr));
+			buf.append("?").append(EncodeUtil.encodeQueryString(qryStr));
 		}
 		return buf.toString();
 	}
 	
 	public static String getUrl(String url, String version, String resource, String... qryStr) {
 		StringBuilder buf = new StringBuilder();
-		buf.append(url).append("/").append(version).append("/").append(UrlEncodeUtil.encodeUrl(resource));
+		buf.append(url).append("/").append(version).append("/").append(EncodeUtil.encodeUrl(resource));
 		if (qryStr != null && qryStr.length > 0) {
-			buf.append("?").append(UrlEncodeUtil.encodeQueryString(qryStr));
+			buf.append("?").append(EncodeUtil.encodeQueryString(qryStr));
 		}
 		return buf.toString();
 	}

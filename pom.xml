@@ -273,12 +273,12 @@
 			<version>${javaxmail.version}</version>
 		</dependency>
 
-		<!-- just for Dropbox API
+		<!-- just for Dropbox API -->
 		<dependency>
 			<groupId>com.dropbox.core</groupId>
 			<artifactId>dropbox-core-sdk</artifactId>
 			<version>[1.7,1.8)</version>
-		</dependency> -->
+		</dependency>
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
 			<artifactId>json-simple</artifactId>

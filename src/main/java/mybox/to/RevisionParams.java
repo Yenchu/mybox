@@ -9,12 +9,8 @@ public class RevisionParams extends PathParams {
 	public RevisionParams() {
 	}
 	
-	public RevisionParams(String root, String path) {
-		super(root, path);
-	}
-	
-	public RevisionParams(User user, String root, String path) {
-		super(user, root, path);
+	public RevisionParams(User user, String path) {
+		super(user, path);
 	}
 	
 	public String getRevLimit() {

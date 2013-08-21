@@ -3,52 +3,43 @@ package mybox.model;
 import java.io.Serializable;
 
 public class User implements Serializable {
-	
-	protected String id;
-	
-	protected String name;
 
-	protected String ip;
+	protected Token token;
 
-	protected String accessToken;
+	protected AccountInfo accountInfo;
 
 	public String toString() {
 		StringBuilder buf = new StringBuilder();
-		buf.append("id=").append(id);
-		buf.append(", name=").append(name);
-		buf.append(", ip=").append(ip);
+		buf.append("token={").append(token).append("}");
+		buf.append(", accountInfo={").append(accountInfo).append("}");
 		return buf.toString();
 	}
 
 	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
+		return accountInfo != null ? accountInfo.getUid().toString() : null;
 	}
 
 	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getIp() {
-		return ip;
-	}
-
-	public void setIp(String ip) {
-		this.ip = ip;
+		return accountInfo != null ? accountInfo.getDisplayName() : null;
 	}
 
 	public String getAccessToken() {
-		return accessToken;
+		return token != null ? token.getAccessToken() : null;
 	}
 
-	public void setAccessToken(String token) {
-		this.accessToken = token;
+	public Token getToken() {
+		return token;
+	}
+
+	public void setToken(Token token) {
+		this.token = token;
+	}
+
+	public AccountInfo getAccountInfo() {
+		return accountInfo;
+	}
+
+	public void setAccountInfo(AccountInfo accountInfo) {
+		this.accountInfo = accountInfo;
 	}
 }

@@ -73,7 +73,6 @@ var FileUpload = (function(options) {
 
 		this.customSettings.totalFileSize += file.size;
 		
-		this.addFileParam(file.id, 'space', options.spaceId);
 		this.addFileParam(file.id, 'folder', options.getCurrentFolder());
 		this.addFileParam(file.id, 'fileSize', file.size);
 	}

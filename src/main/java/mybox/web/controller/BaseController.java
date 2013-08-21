@@ -2,17 +2,13 @@ package mybox.web.controller;
 
 import javax.servlet.http.HttpServletRequest;
 
-import mybox.util.UrlEncodeUtil;
+import mybox.util.EncodeUtil;
 import mybox.web.vo.Notice;
 
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class BaseController {
+public abstract class BaseController {
 
-	private static final Logger log = LoggerFactory.getLogger(BaseController.class);
-	
 	protected String getRestOfPath(HttpServletRequest request, int startIndex) {
 		String path = request.getRequestURI();
 		path = path.substring(request.getContextPath().length());
@@ -38,7 +34,7 @@ public class BaseController {
 	protected String decodeUrl(String encodedPath) {
 		String path = null;
 		if (StringUtils.isNotBlank(encodedPath)) {
-			path = UrlEncodeUtil.decode(encodedPath);
+			path = EncodeUtil.decode(encodedPath);
 		}
 		return path;
 	}

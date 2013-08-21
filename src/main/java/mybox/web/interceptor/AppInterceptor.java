@@ -22,9 +22,8 @@ public class AppInterceptor extends HandlerInterceptorAdapter {
 	
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-		String serviceType = request.getParameter("service");
 		User user = WebUtil.getUser(request);
-		if (authService.isLogin(serviceType, user)) {
+		if (authService.isLogin(user)) {
 			return true;
 		}
 		
@@ -34,21 +33,9 @@ public class AppInterceptor extends HandlerInterceptorAdapter {
 		}
 		
 		log.debug("Request {} from {} isn't login!", request.getRequestURI(), WebUtil.getUserAddress(request));
-		String redirectUrl = authService.getAuthUrl(serviceType);
+		String redirectUrl = authService.getAuthorizingUrl();
 		response.sendRedirect(redirectUrl);
 		return false;
-		
-		/*User user = WebUtil.getUser(request);
-		if (user == null) {
-			String path = WebUtil.getPathAfterServicePath(request);
-			if (!path.endsWith("/oauth2/code") && !path.equals("/login") && !path.startsWith("/login?")) {
-				log.debug("Request {} from {} isn't login!", request.getRequestURI(), WebUtil.getUserAddress(request));
-				String contextPath = request.getContextPath();
-				response.sendRedirect(contextPath + "/login");
-				return false;
-			}
-		}
-		return true;*/
 	}
 
 	@Override

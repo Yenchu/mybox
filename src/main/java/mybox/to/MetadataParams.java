@@ -17,12 +17,8 @@ public class MetadataParams extends EntryParams {
 	public MetadataParams() {
 	}
 	
-	public MetadataParams(String root, String path) {
-		super(root, path);
-	}
-	
-	public MetadataParams(User user, String root, String path) {
-		super(user, root, path);
+	public MetadataParams(User user, String path) {
+		super(user, path);
 	}
 
 	public String getHash() {

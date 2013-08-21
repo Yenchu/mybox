@@ -11,12 +11,8 @@ public class ThumbnailParams extends PathParams {
 	public ThumbnailParams() {
 	}
 	
-	public ThumbnailParams(String root, String path) {
-		super(root, path);
-	}
-	
-	public ThumbnailParams(User user, String root, String path) {
-		super(user, root, path);
+	public ThumbnailParams(User user, String path) {
+		super(user, path);
 	}
 
 	public String getFormat() {

@@ -1,6 +1,5 @@
 package mybox.util;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map;
@@ -9,13 +8,12 @@ import java.util.Map.Entry;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import mybox.exception.Error;
 import mybox.exception.ErrorException;
 import mybox.model.User;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WebUtil {
 
@@ -85,22 +83,6 @@ public class WebUtil {
 			path = pathWoContext;
 		}
 		return path;
-	}
-	
-	/**
-	 * Tomcat servlet container uses ISO-8859-1 to decode URL.
-	 * @param id
-	 * @return
-	 */
-	public static String toUTF8(String encodedStr) {
-		String str = null;
-		try {
-			str = new String(encodedStr.getBytes("ISO-8859-1"), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			log.error(e.getMessage(), e);
-			str = encodedStr;
-		}
-		return str;
 	}
 	
 	public static void logParameters(HttpServletRequest request) {

@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 public enum ServiceType {
 	
-	DISK("dk"), DROPBOX("db");
+	DROPBOX("db"), EXTENSION("ex"), ;
 
 	private static final Logger log = LoggerFactory.getLogger(ServiceType.class);
 
@@ -22,8 +22,8 @@ public enum ServiceType {
 	public ServiceType getServiceType(String value) {
 		if (DROPBOX.value().equalsIgnoreCase(value)) {
 			return DROPBOX;
-		} else if (DISK.value().equalsIgnoreCase(value)) {
-			return DISK;
+		} else if (EXTENSION.value().equalsIgnoreCase(value)) {
+			return EXTENSION;
 		} else {
 			log.error("Can not find service type of {}", value);;
 			return null;

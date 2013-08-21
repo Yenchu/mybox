@@ -9,9 +9,8 @@ public class MoveParams extends BulkParams {
 	public MoveParams() {
 	}
 	
-	public MoveParams(User user, String root, String[] fromPaths, String[] toPaths) {
+	public MoveParams(User user, String[] fromPaths, String[] toPaths) {
 		this.user = user;
-		this.root = root;
 		this.paths = fromPaths;
 		this.toPaths = toPaths;
 	}

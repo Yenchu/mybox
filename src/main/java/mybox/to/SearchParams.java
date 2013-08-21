@@ -15,12 +15,8 @@ public class SearchParams extends PathParams {
 	public SearchParams() {
 	}
 	
-	public SearchParams(String root, String path) {
-		super(root, path);
-	}
-	
-	public SearchParams(User user, String root, String path) {
-		super(user, root, path);
+	public SearchParams(User user, String path) {
+		super(user, path);
 	}
 
 	public String getQuery() {

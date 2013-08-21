@@ -143,11 +143,11 @@ $(function() {
 		event.preventDefault();
 	});
 	
-	var spaceId = '${space.id}', spaceName = '${space.name}', rootFolder = '${space.root}', currentFolder = '${currentFolder}';
-	var fileTableOptions = {spaceId:spaceId, rootPath:rootFolder, currentFolder: currentFolder};
+	var rootName = 'MyBox', rootFolder = '/', currentFolder = '${currentFolder}';
+	var fileTableOptions = {rootPath:rootFolder, currentFolder: currentFolder};
 	var fileTable = FileTable(fileTableOptions);
 	
-	var fileBreadcrumbOptions = {fileTable:fileTable, rootPath:rootFolder, rootName:spaceName, initPath:currentFolder};
+	var fileBreadcrumbOptions = {fileTable:fileTable, rootPath:rootFolder, rootName:rootName, initPath:currentFolder};
 	var fileBreadcrumb = FileBreadcrumb(fileBreadcrumbOptions);
 	fileTable.setLoadFolderListener(fileBreadcrumb.update);
 	
@@ -177,7 +177,7 @@ $(function() {
 	});
 	
 	// ajax get file-upload-related js
-	uploadJsOptions = {getCurrentFolder:fileTable.getCurrentFolder, spaceId:spaceId};
+	uploadJsOptions = {getCurrentFolder:fileTable.getCurrentFolder};
 	getUploadJs(uploadJsOptions);
 });
 </script>
