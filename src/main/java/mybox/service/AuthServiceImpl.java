@@ -42,8 +42,6 @@ public class AuthServiceImpl implements AuthService {
 		if (StringUtils.isBlank(token)) {
 			return false;
 		}
-		
-		// not impl completely
 		return true;
 	}
 	
