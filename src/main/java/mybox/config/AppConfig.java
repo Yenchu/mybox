@@ -17,10 +17,10 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.ui.velocity.VelocityEngineFactoryBean;
 
 @Configuration
+@Import({ServiceConfig.class, DevConfig.class, CloudConfig.class})
+@PropertySource("classpath:app.properties")
 @EnableAspectJAutoProxy
 @EnableAsync
-@PropertySource("classpath:app.properties")
-@Import({ServiceConfig.class})
 @ComponentScan("mybox.task")
 public class AppConfig implements AsyncConfigurer {
 

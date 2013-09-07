@@ -8,15 +8,15 @@
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			</a>
-			<a class="brand" href="#">My Box</a>
+			<a class="brand" href="${contextPath}">My Box</a>
 			<div class="nav-collapse collapse">
 				<p class="navbar-text pull-right">
 					<i class="icon-user"></i> ${user.name}
 				</p>
 				<ul class="nav">
-					<li id="topnav-home"><a href="${service}/">Home</a></li>
-					<li id="topnav-website"><a href="${contextPath}/ex/website/html/index.html">Pages</a></li>
-					<li id="topnav-events"><a href="${contextPath}/events">Events</a></li>
+					<li id="topnav-home"><a href="${contextPath}">Home</a></li>
+					<li id="topnav-pages"><a href="${contextPath}/page/public/index.html">Pages</a></li>
+					<!-- <li id="topnav-videos"><a href="${contextPath}/underConstruction">Videos</a></li>
 					<li id="topnav-apps"><a href="${contextPath}/apps">Apps</a></li>
 					<li id="topnav-settings"><a href="${contextPath}/settings">Settings</a></li>
 					<li id="topnav-account" class="dropdown">
@@ -25,7 +25,7 @@
 							<li><a href="${contextPath}/account/profile">My Profile</a></li>
 							<li><a href="${contextPath}/account/password">Change Password</a></li>
 						</ul>
-					</li>
+					</li> -->
 					<li><a href="${contextPath}/logout">Logout</a></li>
 				</ul>
 			</div>

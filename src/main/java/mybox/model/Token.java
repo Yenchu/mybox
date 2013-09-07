@@ -1,8 +1,10 @@
 package mybox.model;
 
+import java.io.Serializable;
+
 import com.google.gson.annotations.SerializedName;
 
-public class Token {
+public class Token implements Serializable {
 
 	private String uid;
     

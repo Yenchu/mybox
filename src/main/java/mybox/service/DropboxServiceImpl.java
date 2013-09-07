@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
-import mybox.config.SystemProp;
 import mybox.exception.Error;
 import mybox.exception.ErrorException;
 import mybox.json.JsonConverter;
@@ -70,9 +69,6 @@ public class DropboxServiceImpl implements DropboxService {
 
 	private static final Logger log = LoggerFactory.getLogger(DropboxServiceImpl.class);
 
-	@Autowired
-	private SystemProp systemProp;
-	
 	@Autowired
 	private HttpPostWorker httpPostWorker;
 

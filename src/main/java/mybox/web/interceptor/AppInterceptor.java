@@ -27,7 +27,7 @@ public class AppInterceptor extends HandlerInterceptorAdapter {
 			return true;
 		}
 		
-		String path = WebUtil.getPathAfterServicePath(request);
+		String path = WebUtil.getPathAfterContextPath(request);
 		if (path.endsWith("/oauth2/code")) {
 			return true;
 		}
@@ -43,16 +43,9 @@ public class AppInterceptor extends HandlerInterceptorAdapter {
 			ModelAndView modelAndView) throws Exception {
 		String contextPath = request.getContextPath();
 		request.setAttribute("contextPath", contextPath);
+		request.setAttribute("service", contextPath);
 		
 		String asset = contextPath + "/public";
 		request.setAttribute("asset", asset);
-		
-		String path = WebUtil.getFirstPathAfterContextPath(request);
-		if (path.equals("/login") || path.startsWith("/login?") || path.equals("/logout")) {
-			return;
-		}
-
-		String service = contextPath + path;
-		request.setAttribute("service", service);
 	}
 }

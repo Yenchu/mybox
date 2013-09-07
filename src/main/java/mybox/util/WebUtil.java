@@ -69,6 +69,13 @@ public class WebUtil {
 		return path;
 	}
 	
+	public static String getPathAfterContextPath(HttpServletRequest request) {
+		String requestUri = request.getRequestURI();
+		String contextPath = request.getContextPath();
+		String pathWoContext = requestUri.substring(contextPath.length());
+		return pathWoContext;
+	}
+	
 	public static String getPathAfterServicePath(HttpServletRequest request) {
 		//* this path is similar to path info
 		String requestUri = request.getRequestURI();

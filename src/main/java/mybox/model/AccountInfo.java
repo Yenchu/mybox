@@ -1,8 +1,10 @@
 package mybox.model;
 
+import java.io.Serializable;
+
 import com.google.gson.annotations.SerializedName;
 
-public class AccountInfo {
+public class AccountInfo implements Serializable {
 
 	private Long uid;
 	
@@ -67,7 +69,7 @@ public class AccountInfo {
 		this.quotaInfo = quotaInfo;
 	}
 
-	public static class QuotaInfo {
+	public static class QuotaInfo implements Serializable {
 
 		private long quota;
 

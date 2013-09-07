@@ -17,32 +17,6 @@ function createTable(tableId, options) {
 	return $table;
 }
 
-function createSimpleUsersTable(tableId) {
-	var options = {
-		colModels: [
-			{name:'id', header:'ID', hidden:true},
-			{name:'name', header:'Name', sortable:true}
-		],
-		isMultiSelect: true,
-		isPageable: true,
-		remote: {url:'${contextPath}/users'}
-	};
-	return createTable(tableId, options);
-}
-
-function createSharesTable(tableId, localData) {
-	var options = {
-		colModels: [
-			{name:'id', header:'ID', hidden:true},
-			{name:'toUserName', header:'Name'},
-			{name:'notation', header:'Permission', options:{'2':'write', '4':'read'}}
-		],
-		isPageable: true,
-		localData: localData
-	};
-	return createTable(tableId, options);
-}
-
 var FileTable = (function() {
 	
 	var FileType = {FOLDER:'folder', FILE:'file'}, Notation = {WRITE:2, READ:4};

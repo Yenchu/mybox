@@ -35,6 +35,10 @@
 			<definition template="/WEB-INF/templates/leftNavContent.jsp" />
 		</put-attribute>
 	</definition>
+	
+	<definition name="underConstruction" extends="contentOnlyLayout">
+		<put-attribute name="content" value="/WEB-INF/views/underConstruction.jsp" cascade="true" />
+	</definition>
 
 	<definition name="login" extends="simpleLayout">
 		<put-attribute name="content" value="/WEB-INF/views/login/login.jsp" cascade="true" />

@@ -6,11 +6,8 @@ import javax.servlet.http.HttpSession;
 import mybox.model.Token;
 import mybox.model.User;
 import mybox.service.AuthService;
-import mybox.type.ServiceType;
-import mybox.util.PathUtil;
 import mybox.util.WebUtil;
 
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +23,7 @@ public class AuthController extends BaseController {
 	@Autowired
 	private AuthService authService;
 	
-	@RequestMapping(value = "/db/oauth2/code")
+	@RequestMapping(value = "/oauth2/code")
 	public String receiveOauth2Code(
 			@RequestParam(value = "code", required = false) String code, 
 			@RequestParam(value = "state", required = false) String state, 
@@ -35,18 +32,7 @@ public class AuthController extends BaseController {
 		Token token = authService.getToken(code);
 		User user = authService.getUser(token);
 		WebUtil.setUser(request, user);
-		return "redirect:/db/metadata";
-	}
-	
-	@RequestMapping(value="/login")
-	public String login(@RequestParam(value = "service", required = false) String serviceType, 
-			HttpServletRequest request) {
-		if (StringUtils.isBlank(serviceType)) {
-			serviceType = ServiceType.DROPBOX.value();
-		}
-		String serviceUrl = PathUtil.combinePath(request.getContextPath(), serviceType);
-		request.setAttribute("service", serviceUrl);
-		return "login";
+		return "redirect:/metadata";
 	}
 	
 	@RequestMapping(value="/logout")
@@ -54,6 +40,6 @@ public class AuthController extends BaseController {
 		User user = WebUtil.getUser(request);
 		log.debug("User {} from {} logout!", user, WebUtil.getUserAddress(request));
 		session.removeAttribute("user");
-		return "login";
+		return "home";
 	}
 }

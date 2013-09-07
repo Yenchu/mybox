@@ -66,7 +66,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @Controller
-@RequestMapping(value = "/db")
 public class DropboxController extends AbstractFileController {
 	
 	private static final Logger log = LoggerFactory.getLogger(DropboxController.class);
@@ -77,10 +76,6 @@ public class DropboxController extends AbstractFileController {
 	protected DropboxService getService() {
 		return dropboxService;
 	}
-	
-	protected int getServicePathLength() {
-		return 3;
-	}
 
 	@RequestMapping(value={"", "/"})
 	public String index(HttpServletRequest request) {
@@ -90,7 +85,7 @@ public class DropboxController extends AbstractFileController {
 	@RequestMapping(value = "/metadata/**")
 	public String getFiles(HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
-		String path = getRestOfPath(request, getServicePathLength() + 9);
+		String path = getRestOfPath(request, 9);
 		log.debug("User {} list {}", user.getName(), (path != null ? path : "/"));
 		
 		if (StringUtils.isEmpty(path)) {
@@ -186,7 +181,7 @@ public class DropboxController extends AbstractFileController {
 	public void download(
 			HttpServletRequest request, HttpServletResponse response) {
 		User user = WebUtil.getUser(request);
-		String path = getRestOfPath(request, getServicePathLength() + 6);
+		String path = getRestOfPath(request, 6);
 		if (path == null || "".equals(path)) {
 			throw new ErrorException(Error.badRequest("Download file request from " + user.getName() + " doesn't have file path!"));
 		}
@@ -239,7 +234,7 @@ public class DropboxController extends AbstractFileController {
 	public void getThumbnail(
 			HttpServletRequest request, HttpServletResponse response) {
 		User user = WebUtil.getUser(request);
-		String path = getRestOfPath(request, getServicePathLength() + 11);
+		String path = getRestOfPath(request, 11);
 		if (path == null || "".equals(path)) {
 			throw new ErrorException(Error.badRequest("Get thumbnail request from " + user.getName() + " doesn't have file path!"));
 		}
@@ -405,7 +400,7 @@ public class DropboxController extends AbstractFileController {
 	public String getRevisions(
 			HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
-		String path = getRestOfPath(request, getServicePathLength() + 10);
+		String path = getRestOfPath(request, 10);
 		log.debug("User {} get revisions of {}", user.getName(), path);
 		
 		if (StringUtils.isBlank(path)) {
@@ -426,7 +421,7 @@ public class DropboxController extends AbstractFileController {
 			@RequestParam(value = "rev", required = false) String rev, 
 			HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
-		String path = getRestOfPath(request, getServicePathLength() + 8);
+		String path = getRestOfPath(request, 8);
 		log.info("User {} want to restore {} version {}", user.getName(), path, rev);
 		
 		if (StringUtils.isBlank(rev)) {
@@ -447,7 +442,7 @@ public class DropboxController extends AbstractFileController {
 	@RequestMapping(value="/shares/**", method = RequestMethod.POST)
 	public ResponseEntity<String> link(HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
-		String path = getRestOfPath(request, getServicePathLength() + 7);
+		String path = getRestOfPath(request, 7);
 		log.info("User {} create link of {}", user.getName(), path);
 		
 		LinkParams params = new LinkParams(user, path);
@@ -467,7 +462,7 @@ public class DropboxController extends AbstractFileController {
 			@RequestParam(value = "query", required = false) String query, 
 			HttpServletRequest request) {
 		User user = WebUtil.getUser(request);
-		String path = getRestOfPath(request, getServicePathLength() + 7);
+		String path = getRestOfPath(request, 7);
 		log.debug("User {} search {} in {}", user.getName(), query, path);
 		
 		SearchParams params = new SearchParams(user, path);

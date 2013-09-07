@@ -13,7 +13,6 @@ import mybox.model.MetadataEntry;
 import mybox.model.User;
 import mybox.service.DropboxService;
 import mybox.to.EntryParams;
-import mybox.type.ServiceType;
 import mybox.util.WebUtil;
 
 import org.apache.commons.io.IOUtils;
@@ -24,7 +23,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-@RequestMapping(value = "/ex")
 public class ExtensionController extends AbstractFileController {
 
 	private static final Logger log = LoggerFactory.getLogger(ExtensionController.class);
@@ -36,25 +34,16 @@ public class ExtensionController extends AbstractFileController {
 		return dropboxService;
 	}
 	
-	protected int getServicePathLength() {
-		return 3;
-	}
-	
-	@RequestMapping(value = "/website")
-	public String browse(HttpServletRequest request) {
-		return "website";
-	}
-	
-	@RequestMapping(value = "/website/**")
+	@RequestMapping(value = "/page/**")
 	public void browse(
 			HttpServletRequest request, HttpServletResponse response) {
 		User user = WebUtil.getUser(request);
-		String path = getRestOfPath(request, getServicePathLength() + 8);
+		String path = getRestOfPath(request, 5);
 		if (path == null || "".equals(path)) {
-			throw new ErrorException(Error.badRequest("Browse file request from " + user.toString() + " doesn't have file path!"));
+			throw new ErrorException(Error.badRequest("Browse page request from " + user.getName() + " doesn't have file path!"));
 		}
-		log.info("User {} browse {}", user.toString(), path);
 		
+		log.info("User {} browse page {}", user.getName(), path);
 		EntryParams params = new EntryParams(user, path);
 		FileEntry entry = getService().download(params);
 		
@@ -63,25 +52,25 @@ public class ExtensionController extends AbstractFileController {
 		InputStream in = entry.getContent();
 		String fileName = metadata.getName();
 		long fileSize = metadata.getBytes();
-		log.debug("Get browsed source {} size {} success.", fileName, fileSize);
+		log.debug("Get browsed page {} size {} success.", fileName, fileSize);
 		
 		try {
 			response.setContentType(contentType);
 			if (contentType.contains("html")) {
 				String content = IOUtils.toString(in);
 				StringBuilder sb = new StringBuilder();
-				sb.append(request.getContextPath()).append("/").append(ServiceType.EXTENSION.value()).append("/website/").append("/html/");
+				sb.append(request.getContextPath()).append("/page/").append("/public/");
 				content = content.replaceAll("(.*?)(src|href)(=\"/)([^/].*?)", "$1$2=\"" + sb.toString() + "$4");
 				InputStream modifiedIn = IOUtils.toInputStream(content);
 				long realSize = IOUtils.copy(modifiedIn, response.getOutputStream());
-				log.debug("Output browsed source {} modified size {}", fileName, realSize);
+				//log.debug("Output browsed page {} size {}", fileName, realSize);
 			} else {
 				if (fileSize >= DOWNLOAD_FILE_SIZE_THRESOLD) {
 					long realSize = IOUtils.copyLarge(in, response.getOutputStream());
-					log.debug("Output browsed source {} x=size {}", fileName, realSize);
+					//log.debug("Output browsed page {} size {}", fileName, realSize);
 				} else {
 					int realSize = IOUtils.copy(in, response.getOutputStream());
-					log.debug("Output browsed source {} size {}", fileName, realSize);
+					//log.debug("Output browsed page {} size {}", fileName, realSize);
 				}
 			}
 			response.flushBuffer();
