@@ -12,7 +12,7 @@ public class ConfigurableApplicationContextInitializer implements ApplicationCon
 	
 	@Override
 	public void initialize(ConfigurableApplicationContext applicationContext) {
-		String appServerName = System.getProperty("OPENSHIFT_APP_DNS");
+		String appServerName = System.getProperty("OPENSHIFT_APP_UUID");
 		if (StringUtils.isNotBlank(appServerName)) {
 			log.info("App {} is deployed in cloud.", appServerName);
 			applicationContext.getEnvironment().setActiveProfiles("cloud");
