@@ -36,11 +36,11 @@ public class ControllerExceptionHandler {
 		return handleResponse(request, error);
 	}
 	
-	protected ResponseEntity<String> handleResponse(HttpServletRequest request, Error erorr) {
-		String body = JsonConverter.toJson(erorr);
+	protected ResponseEntity<String> handleResponse(HttpServletRequest request, Error error) {
+		String body = JsonConverter.toJson(error);
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		ResponseEntity<String> responseEntity = new ResponseEntity<String>(body, headers, HttpStatus.valueOf(erorr.getCode()));
+		ResponseEntity<String> responseEntity = new ResponseEntity<String>(body, headers, HttpStatus.valueOf(error.getCode()));
 		return responseEntity;
 	}
 }

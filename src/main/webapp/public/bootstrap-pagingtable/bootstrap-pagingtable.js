@@ -1,5 +1,5 @@
 /* ===================================================
- * bootstrap-pagingtable.js v0.2.2
+ * bootstrap-pagingtable.js v0.2.5
  * https://github.com/Yenchu/bootstrap-pagingtable
  * =================================================== */
 
@@ -422,20 +422,19 @@
 		
 		, updatePagingButtons: function() {
 			var $element = this.$element, page = this.page, totalPages = this.totalPages;
-			var active = this.options.classes.activePagingBtn;
 			if (page <= 0) {
-				$element.find('.goto-first-page').removeClass(active).css('cursor','default');
-				$element.find('.goto-prev-page').removeClass(active).css('cursor','default');
+				$element.find('.goto-first-page').toggleClass('disabled', true).css('cursor', 'default');
+				$element.find('.goto-prev-page').toggleClass('disabled', true).css('cursor', 'default');
 			} else {
-				$element.find('.goto-first-page').toggleClass(active, true).css('cursor','pointer');
-				$element.find('.goto-prev-page').toggleClass(active, true).css('cursor','pointer');
+				$element.find('.goto-first-page').removeClass('disabled').css('cursor', 'pointer');
+				$element.find('.goto-prev-page').removeClass('disabled').css('cursor', 'pointer');
 			}
 			if (page >= totalPages - 1) {
-				$element.find('.goto-next-page').removeClass(active).css('cursor','default');
-				$element.find('.goto-last-page').removeClass(active).css('cursor','default');
+				$element.find('.goto-next-page').toggleClass('disabled', true).css('cursor', 'default');
+				$element.find('.goto-last-page').toggleClass('disabled', true).css('cursor', 'default');
 			} else {
-				$element.find('.goto-next-page').toggleClass(active, true).css('cursor','pointer');
-				$element.find('.goto-last-page').toggleClass(active, true).css('cursor','pointer');
+				$element.find('.goto-next-page').removeClass('disabled').css('cursor', 'pointer');
+				$element.find('.goto-last-page').removeClass('disabled').css('cursor', 'pointer');
 			}
 		}
 
@@ -828,10 +827,6 @@
 		}
 		
 		, addRow: function(initData) {
-			if (this.options.localData) {
-				return;
-			}
-			
 			initData = initData || {};
 			this.newRowId = initData[this.keyName] || '0'; // new record with default id '0'
 			if (!this.options.inlineEditing) {
@@ -868,10 +863,6 @@
 		}
 		
 		, updateRow: function(rowId) {
-			if (this.options.localData) {
-				return;
-			}
-			
 			if (!rowId) {
 				return;
 			}
@@ -915,7 +906,7 @@
 		}
 		
 		, restoreRow: function(rowId) {
-			if (this.options.localData || !this.options.inlineEditing) {
+			if (!this.options.inlineEditing) {
 				return;
 			}
 
@@ -929,35 +920,16 @@
 			if (!$row) {
 				return;
 			}
-			this.doRestoreRow(rowId, $row);
+			
+			if (this.isAddingRow(rowId)) {
+				$row.remove();
+			} else {
+				this.doRestoreRow(rowId, $row);
+			}
 		}
 		
-		, doRestoreRow: function(rowId, $row, $form) {
-			var rowData = null;
-			if (this.isAddingRow(rowId)) {
-				if (!$form) {
-					// discard edited data
-					$row.remove();
-					return;
-				}
-				rowData = {};
-			} else {
-				rowData = this.getRowData(rowId);
-			}
-			
-			if ($form) {
-				// just to conserve edited data before updating is complete
-				for (var i = 0, len = this.colModels.length; i < len; i++) {
-					var colModel = this.colModels[i];
-					if (colModel.hidden) {
-						continue;
-					}
-					var newVal = $form.find('[name="' + colModel.name + '"]').val();
-					rowData[colModel.name] = newVal;
-				}
-				this.isAddingRow(rowId) && (this.rowDataMap[rowId] = rowData) ;
-			}
-			
+		, doRestoreRow: function(rowId, $row) {
+			var rowData = this.getRowData(rowId);
 			var colElems = $row.find('td');
 			var colIdx = -1;
 			for (var i = 0, len = this.colModels.length; i < len; i++) {
@@ -973,7 +945,7 @@
 		}
 		
 		, saveRow: function(rowId) {
-			if (this.options.localData || !this.options.inlineEditing) {
+			if (!this.options.inlineEditing) {
 				return;
 			}
 			
@@ -992,50 +964,33 @@
 			$row.find('input, select, textarea').appendTo($form);
 			$form.find('[name="' + this.keyName + '"]').length < 1 && $form.append('<input type="hidden" name="' + this.keyName + '" value="' + rowId + '" >');
 			this.doSaveRow(rowId, $form);
-			
-			// restore with edited data before updating is complete
-			this.doRestoreRow(rowId, $row, $form);
-		}
-		
-		, deleteRow: function(settings) {
-			if (this.options.localData) {
-				return;
-			}
-			
-			var rowId = settings[this.keyName];
-			if (!rowId || rowId.length < 1) {
-				return;
-			}
-			
-			var rowIds = $.isArray(rowId) ? rowId : [rowId];
-
-			var displayItems;
-			if (settings.displayColName) {
-				displayItems = [];
-				for (var i = 0, len = rowIds.length; i < len; i++) {
-					var rowData = this.getRowData(rowIds[i]);
-					var colModel = this.getColModel(settings.displayColName);
-					var content = this.getColContent(rowData, colModel);
-					displayItems.push(content);
-				}
-			} else {
-				displayItems = rowIds;
-			}
-
-			var content = this.options.texts.deleteRowSubject + '<br/>' + '<ul><li>' + displayItems.join('</li><li>') + '</li></ul>';
-			var $modal = this.getEditingModal();
-			$modal.find('.modal-header .editing-title').html(this.options.texts.deleteRowTitle);
-			$modal.find('.modal-body').empty().append(content);
-			$modal.modal('show');
-			
-			var that = this;
-			$modal.find('.editing-submit').off('click').on('click', function(e) {
-				that.remote.isRest ? that.doDeleteRow(rowId) : that.doDeleteRow(rowIds, settings.separator);
-				$modal.modal('hide');
-			});
 		}
 		
 		, doSaveRow: function(rowId, $form) {
+			if (this.options.localData || this.options.inlineEditing) {
+				var rowData = this.isAddingRow(rowId) ? {} : this.getRowData(rowId);
+				for (var i = 0, len = this.colModels.length; i < len; i++) {
+					var colModel = this.colModels[i];
+					if (colModel.hidden) {
+						continue;
+					}
+					
+					var newVal = $form.find('[name="' + colModel.name + '"]').val();
+					newVal && (rowData[colModel.name] = newVal);
+				}
+				this.isAddingRow(rowId) && (this.rowDataMap[rowId] = rowData) ;
+			}
+			
+			if (this.options.inlineEditing) {
+				var $row = this.getRow(rowId);
+				this.doRestoreRow(rowId, $row);
+			}
+			
+			if (this.options.localData) {
+				this.load();
+				return;
+			}
+			
 			var isRest = this.remote.isRest;
 			var action = this.isAddingRow(rowId)? 'add' : 'update';
 			
@@ -1086,11 +1041,59 @@
 			});
 		}
 		
-		, doDeleteRow: function(rowId, separator) {
-			var isRest = this.remote.isRest, toDelId;
+		, deleteRow: function(settings) {
+			var rowId = settings[this.keyName];
+			if (!rowId || rowId.length < 1) {
+				return;
+			}
+			
+			var rowIds = $.isArray(rowId) ? rowId : [rowId];
+
+			var displayItems;
+			if (settings.displayColName) {
+				displayItems = [];
+				for (var i = 0, len = rowIds.length; i < len; i++) {
+					var rowData = this.getRowData(rowIds[i]);
+					var colModel = this.getColModel(settings.displayColName);
+					var content = this.getColContent(rowData, colModel);
+					displayItems.push(content);
+				}
+			} else {
+				displayItems = rowIds;
+			}
+
+			var content = this.options.texts.deleteRowSubject + '<br/>' + '<ul><li>' + displayItems.join('</li><li>') + '</li></ul>';
+			var $modal = this.getEditingModal();
+			$modal.find('.modal-header .editing-title').html(this.options.texts.deleteRowTitle);
+			$modal.find('.modal-body').empty().append(content);
+			$modal.modal('show');
+			
+			var that = this;
+			$modal.find('.editing-submit').off('click').on('click', function(e) {
+				that.remote.isRest ? that.doDeleteRow(rowIds) : that.doDeleteRow(rowIds, settings.separator);
+				$modal.modal('hide');
+			});
+		}
+		
+		, doDeleteRow: function(rowIds, separator) {
+			if (this.options.localData) {
+				for (var i = 0, len = rowIds.length; i < len; i++) {
+					var rid = rowIds[i];
+					for(var key in this.rowDataMap) {
+						if (rid == key) {
+							delete this.rowDataMap[key];
+							break;
+						}
+					}
+				}
+				this.load();
+				return;
+			}
+			
+			var isRest = this.remote.isRest;
 			
 			var e = $.Event('delete');
-			toDelId = isRest ? rowId : rowId.join(separator || ',');
+			var toDelId = rowIds.join(separator || ',');
 			e.rowId = toDelId;
 			this.$element.trigger(e);
 			if (e.isDefaultPrevented()) {
@@ -1252,13 +1255,20 @@
 			return elem;
 		}
 		
-		, getCheckboxElement: function(colModel, checkVal) {
+		, getCheckboxElement: function(colModel, checkVals) {
 			var elem = '', options = this.getColOptions(colModel);
-			checkVal && (checkVal = checkVal.toString());
 			for(var value in options) {
 				var label = options[value];
-				var cb = '<input type="checkbox" name="' + colModel.name + '" value="' + value + (value == checkVal ? '" checked="checked">' : '">') + label;
-				elem += '<label class="checkbox inline">' + cb + '</label>';
+				var checked = '"';
+				for (var i = 0, len = checkVals.length; i < len; i++) {
+					var checkVal = checkVals[i];
+					if (value == checkVal) {
+						checked = '" checked="checked"';
+						break;
+					}
+				}
+				var cb = '<input type="checkbox" name="' + colModel.name + '" value="' + value + checked + '>' + label;
+				elem += '<label class="checkbox-inline">' + cb + '</label>';
 			}
 			return elem;
 		}
@@ -1347,7 +1357,7 @@
 	};
 
 	$.fn.pagingtable.defaults = {
-		classes: {hover: 'info', highlight: 'success', activePagingBtn:'btn-primary'},
+		classes: {hover:'info', highlight:'success'},
 		pageSizeOptions: [10, 20, 50],
 		pagerLocation: 'bottom',
 		paramNames: {page:'page', pageSize:'pageSize', records:'records', totalRecords:'totalRecords', sort:'sort', sortDir:'sortDir'},
@@ -1359,13 +1369,13 @@
 			, submitButton:'Submit'
 			, cancelButton:'Cancel'},
 		pagerTemplate: '<span>View {{fromRecord}} - {{toRecord}} of {{totalRecords}} {{pageSize}} per page</span><span class="pull-right">{{firstButton}}{{prevButton}} Page {{currentPage}} of {{totalPages}} {{nextButton}}{{lastButton}}</span>',
-		firstButtonTemplate: '<a class="btn goto-first-page" href="#"><i class="icon-fast-backward icon-white"></i></a>',
-		prevButtonTemplate: '<a class="btn goto-prev-page" href="#"><i class="icon-step-backward icon-white"></i></a>',
-		nextButtonTemplate: '<a class="btn goto-next-page" href="#"><i class="icon-step-forward icon-white"></i></a>',
-		lastButtonTemplate: '<a class="btn goto-last-page" href="#"><i class="icon-fast-forward icon-white"></i></a>',
-		gotoPageTemplate: '<input type="text" class="input-mini paging-value" placeholder="to page">'
-			+ ' <button type="button" class="btn btn-primary btn-small paging-confirm"><i class="icon-ok icon-white"></i></button>'
-			+ ' <button type="button" class="btn btn-small paging-cancel"><i class="icon-remove"></i></button>',
+		firstButtonTemplate: '<a class="btn btn-primary goto-first-page" href="#"><i class="icon-fast-backward icon-white"></i></a>',
+		prevButtonTemplate: '<a class="btn btn-primary goto-prev-page" href="#"><i class="icon-step-backward icon-white"></i></a>',
+		nextButtonTemplate: '<a class="btn btn-primary goto-next-page" href="#"><i class="icon-step-forward icon-white"></i></a>',
+		lastButtonTemplate: '<a class="btn btn-primary goto-last-page" href="#"><i class="icon-fast-forward icon-white"></i></a>',
+		gotoPageTemplate: '<input type="text" class="input-mini paging-value" placeholder="page">'
+			+ ' <button type="button" class="btn btn-primary btn paging-confirm"><i class="icon-ok icon-white"></i></button>'
+			+ ' <button type="button" class="btn btn paging-cancel"><i class="icon-remove"></i></button>',
 		editingModalTemplate: '<div class="editing-modal modal hide fade">'
 			+ '<div class="modal-header">'
 			+ '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>'

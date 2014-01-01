@@ -20,6 +20,7 @@
 <div class="row-fluid">
 <div class="span12">
 <div id="table-container">
+	Right click mouse to operate files.
 	<table id="file-table" class="table table-bordered"></table>
 </div>
 <div id="file-context-menu">
